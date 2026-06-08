@@ -1,0 +1,8 @@
+2026-06-05 17:42:16.753 [DEBUG] [main] [c.f.j.r.APISelectGetService:50] - GET SPARQL : SELECT ?person ?value  WHERE {        Filter( ?person = <http://dbpedia.org/resource/BTS> ) .        ?person <http://dbpedia.org/property/origin> ?value .   FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) ) }  
+2026-06-05 17:42:16.756 [DEBUG] [main] [c.f.j.r.APISelectGetService:51] - GET URL : http://dbpedia.org/sparql/
+2026-06-05 17:42:16.758 [DEBUG] [main] [c.f.j.r.APISelectGetService:52] - GET PARAM : {query=SELECT ?person ?value
+ WHERE {     
+  Filter( ?person = <http://dbpedia.org/resource/BTS> ) .     
+  ?person <http://dbpedia.org/property/origin> ?value .
+  FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) )
+}  }
