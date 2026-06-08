@@ -13,10 +13,10 @@ LOD, Apache Jena Fuseki, Virtuoso를 Java에서 JDBC처럼 사용 할 수 있는
     -  예) 파라메터를 ?? 로 사용하거나 INSERT Data를 INSERT INTO GRAPH 사용
 
 ###  JobcDriver Attrebute Value
-Divier Name : com.frotoma.jobc.JobcDriver
-URL : Ontology Storage Address
-user : User ID
-password : User password
+* Divier Name : com.frotoma.jobc.JobcDriver
+* URL : Ontology Storage Address
+* user : User ID
+* password : User password
 
 ### URL Attrebute Value
 jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
