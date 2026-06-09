@@ -20,8 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- 
-  Virtuoso의 PreparedStatement 대신에 Statement를 실행함
 */
 package com.frotoma.jobc.virt;
 
@@ -30,6 +28,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+/**
+ *   Virtuoso의 PreparedStatement 대신에 Statement를 실행함
+ * @author jongearl
+ */
 public class VirtuosoConnection implements Connection {
     
     private final Connection delegate;
