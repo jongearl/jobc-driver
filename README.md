@@ -1,22 +1,22 @@
 # jobc-driver
 
-LOD, Apache Jena Fuseki, Virtuoso를 Java에서 JDBC처럼 사용 할 수 있는 라이브러리입니다.
+Jobc Driver - README.md
 
-### 특징
-- 일반적인 Database Connection처럼 코딩을 해서 온톨로지 저장소에 Sparql를 수행합니다.
-- PoolManager를 사용할 수 있습니다.
-    - LOD와 Fuseki는 실제 Pool관리는 하지 않습니다.
-- Mybatis처럼 사용할 수 있습니다.
--  동일한 Sparql을 LOD, Jena fuseki, Virtuoso에서 사용 가능합니다.
-    -  Preparedstatement를 사용할때 Sql과 동일하게 Sparql의 변수를 ? 로 사용합니다.
-    -  Virtuoso에서 preparedstatement를 사용할 때 Sparql은 다른 방법을 사용.
-    -  예) 파라메터를 ?? 로 사용하거나 INSERT Data를 INSERT INTO GRAPH 사용
+LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
+
+### Features
+- Execute Sparql on ontology repositories by coding like a general Database Connection.
+- PoolManager is available. (LOD and Fuseki do not manage the actual pool).
+- Can be used like Mybatis.
+- The same Sparql can be used in LOD, Jena fuseki, and Virtuoso. When using Preparedstatement, '? ' is used as a variable in Sparql just like in Sql.
+- When using preparedstatement in Virtuoso, Sparql uses a different method.
+    - e.g.) Use parameters as '??' or use 'INSERT INTO GRAPH' for 'INSERT Data'.
 
 ###  JobcDriver Attrebute Value
-* Divier Name : com.frotoma.jobc.JobcDriver
-* URL : Ontology Storage Address
-* user : User ID
-* password : User password
+Divier Name : com.frotoma.jobc.JobcDriver
+URL : Ontology Storage Address
+user : User ID
+password : User password
 
 ### URL Attrebute Value
 jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
@@ -26,11 +26,20 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
     * Virtuoso : virtuoso
 * Ontology Storage Address
     * LOD : web address 
-        * ex) http://localhost:8080/sparql
+        * ex) 
+        ```
+        http://localhost:8080/sparql
+        ```
     * Fuseki : Web address
-        * ex) http://localhost:3030/jobc/sparql
+        * ex) 
+        ```
+        http://localhost:3030/jobc/sparql
+        ```
     * Virutoso : address
-        * ex) localhost:1111/CHARSET=UTF-8
+        * ex) 
+        ```
+        localhost:1111/CHARSET=UTF-8
+        ```
 * HTTP Verbs : API HTTP Method
     * ex) get, post etc...
 * Full Example
@@ -39,8 +48,8 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
     * Virtuoso : jobc:virtuoso://localhost:1111/CHARSET=UTF-8
 
 ### Preparedstatement
-코드는 JDBC를 사용할때와 동일
-Sparql의 변수는 '?' 를 사용
+- The code is identical to using JDBC.
+- '?' is used as a variable in Sparql.
 
 
 ### Preparedstatement Example
@@ -96,4 +105,8 @@ Sparql의 변수는 '?' 를 사용
 ### TODO
 Virutoso PreparedStatement : Use PreparedStatement of Virtuoso Driver 
 
+
+### Contact
+* Email : jongearl@frotoma.com
+* Company : [프로토마](http://www.frotoma.com)
 
