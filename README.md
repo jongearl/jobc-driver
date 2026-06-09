@@ -1,7 +1,6 @@
-# jobc-driver
+# Jobc-driver
 
-Jobc Driver - README.md
-
+Jobc(Java Ontology Base Connection) Driver
 LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
 
 ### Features
