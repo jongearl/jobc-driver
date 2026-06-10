@@ -17,6 +17,7 @@ public class TestDrop {
             conn = HikariDataSourceFactory2.getDataSource().getConnection();
             pstmt = conn.prepareStatement("DROP SILENT GRAPH <http://localhost:8890/DAV>");
             int cnt = pstmt.executeUpdate();            
+            conn.commit();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

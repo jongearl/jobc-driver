@@ -7,6 +7,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -44,17 +45,13 @@ public class DBPediaTest {
         Statement stmt = null;
         ResultSet resultSet = null;
         try {
-            DataSource dataSource = crateDataSource();
-            System.out.println( dataSource );
+            DataSource dataSource = crateDataSource();            
             connection = dataSource.getConnection();            
             stmt = connection.createStatement();
             resultSet = stmt.executeQuery(sql);            
 
-            System.out.println("The Connection Object is of Class: " + connection.getClass());
-
             while (resultSet.next()) {
-                System.out
-                        .println(resultSet.getString(1) + "," + resultSet.getString(2) );
+                System.out.println(resultSet.getString(1) + "\t" + resultSet.getString(2) );
             }
 
         } catch (Exception e) {
@@ -73,22 +70,41 @@ public class DBPediaTest {
 
         Connection connection = null;
         PreparedStatement stmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = crateDataSource();
             connection = dataSource.getConnection();            
             stmt = connection.prepareStatement(preparedSql);
 
             stmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
-            stmt.setString(2, "South Korea");
+            stmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
+            //stmt.setString(2, "South Korea");
             
-            resultSet = stmt.executeQuery();            
+            rs = stmt.executeQuery();            
+            
+            ResultSetMetaData rsm = stmt.getMetaData();
+            int columnCount = rsm.getColumnCount();
+            
+            
+            System.out.println("============================================== ");
+            
+            System.out.print("NUM");
+            for( int i = 0; i< columnCount; i++ ){
+                System.out.print( "\t" );
+                System.out.print( rsm.getColumnLabel(i+1) );                    
+            }
+            System.out.println("");            
+            System.out.println("---------------------------------------------- ");
 
-            System.out.println("The Connection Object is of Class: " + connection.getClass());
-
-            while (resultSet.next()) {
-                System.out
-                        .println(resultSet.getString(1) + "," + resultSet.getString(2) );
+            int num = 0;
+            while (rs.next()) {
+                System.out.print( num );
+                for( int i = 0; i< columnCount; i++ ){
+                    System.out.print( "\t" );
+                    System.out.print( rs.getString(i+1) );
+                }
+                System.out.println("");
+                num++;
             }
 
         } catch (Exception e) {
@@ -104,7 +120,7 @@ public class DBPediaTest {
 
     public static void main(String[] args) {
         System.setProperty("log4j.configurationFile", "conf/log4j2.xml");
-//        statementTest();                
+        //statementTest();                
         preparedStatementTest();
     }
 
@@ -125,11 +141,11 @@ public class DBPediaTest {
 "limit 10";  
 
     private static String preparedSql = 
-"SELECT ?person ?value\n" +
-" WHERE {     \n" +
-"  Filter( ?person = ? ) .     \n" +
-"  ?person <http://dbpedia.org/property/origin> ?value .\n" +
-"  FILTER ( CONTAINS( STR( ?value)  , ? ) )\n" +
+"SELECT * " +
+" WHERE {  " +
+"  Filter( ?person = ? ) . " +
+"  ?person ? ?member . " +
+"  ?member <http://dbpedia.org/property/name> ?membername ." +
 "}  ";
     
 }

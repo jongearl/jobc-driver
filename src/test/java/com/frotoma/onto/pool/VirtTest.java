@@ -1,6 +1,6 @@
 package com.frotoma.onto.pool;
 
-import com.frotoma.WebDriverTest;
+import com.frotoma.test.WebDriverTest;
 import com.frotoma.jobc.builder.ParamBuilder;
 import com.frotoma.jobc.web.WebSparqlStatement;
 import java.net.URL;
@@ -49,35 +49,37 @@ public class VirtTest {
 
     public void preparedStatementTest(){
 
-        Connection connection = null;
+        Connection conn = null;
         PreparedStatement stmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = HikariDataSourceFactory2.getDataSource();
             System.out.println( dataSource );
-            connection = dataSource.getConnection();            
-            System.out.println( connection.toString() );
-            stmt = connection.prepareStatement(preparedSql);
+            conn = dataSource.getConnection();            
+            System.out.println( conn.toString() );
+            stmt = conn.prepareStatement(preparedSql);
 
 //            URL url = new URL("http://www.w3.org/2004/02/skos/core#altLabel");
 //            stmt.setURL(1, url);
-
-            stmt.setURL(1, ParamBuilder.createURL("http://wwww.frotoma.com/lod/resource/Test5") );
+            stmt.setObject(1, ParamBuilder.createIRI("http://wwww.frotoma.com/lod/resource/Test5") );
     
 
-            resultSet = stmt.executeQuery();            
+            rs = stmt.executeQuery();            
 
-            while (resultSet.next()) {
-                System.out.println(resultSet.getString(1) + "," + resultSet.getString(2) );
+            while (rs.next()) {
+                System.out.println(rs.getString(1) + "," + rs.getString(2) );
             }
             
-            connection.close();
+            rs.close();
+            stmt.close();
+            conn.close();
 
         } catch (Exception e) {
             e.printStackTrace();
             try {
-                //connection.rollback();
-                connection.close();
+                rs.close();
+                stmt.close();
+                conn.close();
             } catch (SQLException e1) {
                 e1.printStackTrace();
             }

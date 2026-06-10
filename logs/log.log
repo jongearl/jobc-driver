@@ -1,8 +1,9 @@
-2026-06-05 17:42:16.753 [DEBUG] [main] [c.f.j.r.APISelectGetService:50] - GET SPARQL : SELECT ?person ?value  WHERE {        Filter( ?person = <http://dbpedia.org/resource/BTS> ) .        ?person <http://dbpedia.org/property/origin> ?value .   FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) ) }  
-2026-06-05 17:42:16.756 [DEBUG] [main] [c.f.j.r.APISelectGetService:51] - GET URL : http://dbpedia.org/sparql/
-2026-06-05 17:42:16.758 [DEBUG] [main] [c.f.j.r.APISelectGetService:52] - GET PARAM : {query=SELECT ?person ?value
- WHERE {     
-  Filter( ?person = <http://dbpedia.org/resource/BTS> ) .     
-  ?person <http://dbpedia.org/property/origin> ?value .
-  FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) )
-}  }
+2026-06-10 16:32:37.766 [INFO ] [main] [c.f.WebDriverTest:127] - 시작
+2026-06-10 16:32:37.788 [DEBUG] [main] [c.f.j.r.APISelectGetService:73] - GET SPARQL : SELECT distinct ?person ?name WHERE {     {     SELECT ?person ?name    WHERE {       ?person <http://www.w3.org/2000/01/rdf-schema#label> ?name .      ?person <http://dbpedia.org/property/birthPlace> ?value .      ?person <http://dbpedia.org/property/occupation> 'Singer'@en      FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) )    }    }    FILTER ( LANG(  ?name ) = "en" ) }limit 10
+2026-06-10 16:32:37.789 [DEBUG] [main] [c.f.j.r.APISelectGetService:74] - GET URL : http://dbpedia.org/sparql/
+2026-06-10 16:32:37.789 [DEBUG] [main] [c.f.j.r.APISelectGetService:75] - GET PARAM : {query=SELECT distinct ?person ?name WHERE {     {     SELECT ?person ?name    WHERE {       ?person <http://www.w3.org/2000/01/rdf-schema#label> ?name .      ?person <http://dbpedia.org/property/birthPlace> ?value .      ?person <http://dbpedia.org/property/occupation> 'Singer'@en      FILTER ( CONTAINS( STR( ?value)  , "South Korea" ) )    }    }    FILTER ( LANG(  ?name ) = "en" ) }limit 10}
+2026-06-10 16:32:37.795 [DEBUG] [main] [c.f.j.r.APISelectGetService:90] - GET AUTH : admin / PASSWORD 
+2026-06-10 16:32:40.649 [DEBUG] [main] [c.f.j.r.APISelectGetService:73] - GET SPARQL : SELECT *  WHERE {    Filter( ?person = <http://dbpedia.org/resource/BTS> ) .   ?person <http://dbpedia.org/ontology/bandMember> ?member .   ?member <http://dbpedia.org/property/name> ?membername .}   
+2026-06-10 16:32:40.649 [DEBUG] [main] [c.f.j.r.APISelectGetService:74] - GET URL : http://dbpedia.org/sparql/
+2026-06-10 16:32:40.649 [DEBUG] [main] [c.f.j.r.APISelectGetService:75] - GET PARAM : {query=SELECT *  WHERE {    Filter( ?person = <http://dbpedia.org/resource/BTS> ) .   ?person <http://dbpedia.org/ontology/bandMember> ?member .   ?member <http://dbpedia.org/property/name> ?membername .}   }
+2026-06-10 16:32:40.650 [DEBUG] [main] [c.f.j.r.APISelectGetService:90] - GET AUTH : admin / PASSWORD 

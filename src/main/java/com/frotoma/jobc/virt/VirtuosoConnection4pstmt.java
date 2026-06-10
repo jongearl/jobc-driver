@@ -23,27 +23,32 @@ SOFTWARE.
 */
 package com.frotoma.jobc.virt;
 
+import com.frotoma.jobc.builder.VirtuosoPreparedSparqlBuilder;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
- *   Virtuoso의 PreparedStatement 대신에 Statement를 실행함
+ *   TODO : Virtuoso Preparedstatement
  * @author jongearl
  */
-public class VirtuosoConnection implements Connection {
+public class VirtuosoConnection4pstmt implements Connection {
+    
+    private Logger logger = LogManager.getLogger(VirtuosoConnection4pstmt.class);
     
     private final Connection delegate;
     
-    public VirtuosoConnection(Connection delegate) {
+    public VirtuosoConnection4pstmt(Connection delegate) {
         this.delegate = delegate;        
     }
 
     // prepareStatement 모든 오버로드 변환 적용
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {        
-        return new VirtuosoPreparedStatement( delegate.createStatement(),   sql );
+        return new VirtuosoPreparedStatement4psmt( delegate,   sql );
     }
 
     @Override

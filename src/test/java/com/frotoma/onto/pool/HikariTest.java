@@ -40,16 +40,13 @@ public class HikariTest {
         ResultSet resultSet = null;
         try {
             DataSource dataSource = HikariDataSourceFactory2.getDataSource();
-            System.out.println( dataSource );
             connection = dataSource.getConnection();            
             stmt = connection.createStatement();
             resultSet = stmt.executeQuery(sql);            
 
-            System.out.println("The Connection Object is of Class: " + connection.getClass());
-
             while (resultSet.next()) {
                 System.out
-                        .println(resultSet.getString(1) + "," + resultSet.getString(2) );
+                        .println(resultSet.getString(1) );
             }
 
         } catch (Exception e) {
@@ -67,23 +64,21 @@ public class HikariTest {
     public static void preparedStatementTest(){
 
         Connection connection = null;
-        PreparedStatement stmt = null;
+        PreparedStatement pstmt = null;
         ResultSet resultSet = null;
         try {
-            DataSource dataSource = HikariDataSourceFactory2.getDataSource();
-            System.out.println( dataSource );
+            DataSource dataSource = HikariDataSourceFactory2.getDataSource();            
             connection = dataSource.getConnection();            
-            stmt = connection.prepareStatement(preparedSql);
+            pstmt = connection.prepareStatement(preparedSql);
 
+            pstmt.setObject(1, ParamBuilder.createIRI("http://localhost:8890/DAV"));               
+            pstmt.setObject(2, ParamBuilder.createIRI("http://xmlns.com/foaf/0.1/Agent"));
             
-            stmt.setObject(1, ParamBuilder.createIRI("http://www.w3.org/2004/02/skos/core#altLabel"));
-            resultSet = stmt.executeQuery();            
-
-            System.out.println("The Connection Object is of Class: " + connection.getClass());
+            resultSet = pstmt.executeQuery();            
 
             while (resultSet.next()) {
                 System.out
-                        .println(resultSet.getString(1) + "," + resultSet.getString(2) );
+                        .println(resultSet.getString(1) );
             }
 
         } catch (Exception e) {
@@ -101,31 +96,18 @@ public class HikariTest {
         System.setProperty("log4j.configurationFile", "conf/log4j2.xml");
         System.setProperty("dbpool.config", "conf/dbpool.properties");
         
-        // drop();
+        drop();
 //        statementTest();
-         preparedStatementTest();        
+         //preparedStatementTest();        
     }
 
-    private static String sql = "SELECT ?doc ?docname "
-    +" FROM <http://opendata.mofa.go.kr/mofaservice> "
-    +"WHERE { "
-        +"  ?uri <http://www.w3.org/2004/02/skos/core#altLabel>  ?uriname. "
-        +" filter( ?uriname = \"외교부\" ) "
-        +" ?uri <http://opendata.mofa.go.kr/mofabrief/relatedBriefing> ?doc. "
-        +" ?doc <http://www.w3.org/2004/02/skos/core#prefLabel> ?docname . "
-        +" } "
-        +" ORDER BY ?docname "
-        +" LIMIT 10"; 
+    private static final String sql = "SELECT * "
+                + "WHERE { \n"
+                + "graph <http://localhost:8890/DAV> { "
+                + "?i a <http://xmlns.com/foaf/0.1/Agent> "
+                + "} "
+                + "}";
 
-    private static String preparedSql = "SELECT ?doc ?docname "
-        +" FROM <http://opendata.mofa.go.kr/mofaservice> "
-        +"WHERE { "
-            +"  ?uri ?  ?uriname. "
-            +" filter( ?uriname = \"한·미 정상회담\" ) "
-            +" ?uri <http://opendata.mofa.go.kr/mofadocu/relatedDoc> ?doc. "
-            +" ?doc <http://www.w3.org/2004/02/skos/core#prefLabel> ?docname . "
-            +" } "
-            +" ORDER BY ?docname "
-            +" LIMIT 10";     
+    private static final String preparedSql = "SELECT *  WHERE {  graph ?  {  ?i a ? }}";  
 
 }

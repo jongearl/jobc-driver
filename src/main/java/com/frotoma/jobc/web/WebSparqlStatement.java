@@ -251,12 +251,7 @@ public class WebSparqlStatement implements Statement{
         }else{
             int i = executeUpdate(sql);
             return i > 0;
-        }
-        // Boolean bool = false;
-        // if( rs.next() ){
-        //     bool = rs.getBoolean(1);
-        // }
-        // return bool;
+        }        
     }
 
     @Override
@@ -304,7 +299,8 @@ public class WebSparqlStatement implements Statement{
     }
 
     @Override
-    public void addBatch(String sql) throws SQLException {                
+    public void addBatch(String sql) throws SQLException {    
+        this.execute(sql);
     }
 
     @Override

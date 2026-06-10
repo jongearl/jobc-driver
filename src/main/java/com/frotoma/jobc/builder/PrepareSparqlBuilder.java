@@ -25,7 +25,6 @@ package com.frotoma.jobc.builder;
 
 import java.net.URL;
 import java.util.Calendar;
-import org.apache.jena.datatypes.RDFDatatype;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.iri.IRI;
 import org.apache.jena.query.ParameterizedSparqlString;
@@ -39,9 +38,13 @@ public class PrepareSparqlBuilder {
     
     ParameterizedSparqlString pss = null;
     
-    public PrepareSparqlBuilder(String sql){        
+    public PrepareSparqlBuilder(String sql){          
         pss = new ParameterizedSparqlString();
-        pss.setCommandText(sql);
+        
+        String sparql = sql + " ";
+        pss.setCommandText(sparql);
+        
+        System.out.println("|"+sparql+"|");
     }
     
     public void addParameter( int idx , URL obj){        

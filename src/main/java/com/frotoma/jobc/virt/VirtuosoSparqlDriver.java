@@ -69,6 +69,8 @@ public class VirtuosoSparqlDriver implements java.sql.Driver {
         if (original == null) { return null; }
 
         return new VirtuosoConnection(original);
+        // TODO : Virtuoso PreparedStatement
+        //return new VirtuosoConnection4pstmt(original); 
     }
 // jdbc:virt://localhost:1111 → jdbc:virtuoso://localhost:1111
     private String convertUrl(String url) {
