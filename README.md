@@ -1,7 +1,6 @@
-# Jobc-driver
+# jobc-driver
 
-Jobc(Java Ontology Base Connection) Driver
-
+Jobc (java ontology base connection)
 
 LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
 
@@ -12,6 +11,7 @@ LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
 - The same Sparql can be used in LOD, Jena fuseki, and Virtuoso. When using Preparedstatement, '? ' is used as a variable in Sparql just like in Sql.
 - When using preparedstatement in Virtuoso, Sparql uses a different method.
     - e.g.) Use parameters as '??' or use 'INSERT INTO GRAPH' for 'INSERT Data'.
+- Generally, LOD does not support updates.
 
 ###  JobcDriver Attrebute Value
 Divier Name : com.frotoma.jobc.JobcDriver
@@ -30,7 +30,7 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
         * ex) 
         ```
         http://localhost:8080/sparql
-        ```
+        ```        
     * Fuseki : Web address
         * ex) 
         ```
@@ -55,57 +55,66 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
 
 ### Preparedstatement Example
 ```java
-    String DRIVER = "com.frotoma.jobc.JobcDriver";
+        String preparedSql = 
+            "SELECT *  WHERE {  " +
+            "  Filter( ?person = ? ) . " +
+            "  ?person ? ?member . " +
+            "  ?member <http://dbpedia.org/property/name> ?membername ." +
+            "}  ";
+
+        String DRIVER = "com.frotoma.jobc.JobcDriver";
         String URL = "jobc:web:http://dbpedia.org/sparql/";
         String user = null;
         String password = null;
 
-        Connection conn = null;
+        Connection connection = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
         try {
-            Class.forName(DRIVER);
-        } catch (ClassNotFoundException ex) {
-            System.getLogger(DBPediaTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
-        }
-
-        String preparedSql = "SELECT ?person ?value\n"
-            + " WHERE {     \n"
-            + "  Filter( ?person = ? ) .     \n"
-            + "  ?person <http://dbpedia.org/property/origin> ?value .\n"
-            + "  FILTER ( CONTAINS( STR( ?value)  , ? ) )\n"
-            + "}  ";
-
-        try {
-            conn = DriverManager.getConnection(URL, user, password);
-            stmt = conn.prepareStatement(preparedSql);
+            DataSource dataSource = crateDataSource();
+            connection = dataSource.getConnection();            
+            stmt = connection.prepareStatement(preparedSql);
 
             stmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
-            stmt.setString(2, "South Korea");
-
-            rs = stmt.executeQuery();
-
-            System.out.println("================ Result ====================");
-
-            ResultSetMetaData rsmd = rs.getMetaData();
-
-            while (rs.next()) {
-                System.out.print(rsmd.getColumnLabel(1) + " : " + rs.getString(1));
-                System.out.println("\t");
-                System.out.print(rsmd.getColumnLabel(2) + " : " + rs.getString(2));
+            stmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
+            //stmt.setString(2, "South Korea");
+            
+            rs = stmt.executeQuery();            
+            
+            ResultSetMetaData rsm = stmt.getMetaData();
+            int columnCount = rsm.getColumnCount();
+            
+            
+            System.out.println("============================================== ");
+            
+            System.out.print("NUM");
+            for( int i = 0; i< columnCount; i++ ){
+                System.out.print( "\t" );
+                System.out.print( rsm.getColumnLabel(i+1) );                    
             }
-            rs.close();
-            stmt.close();
-            conn.close();
+            System.out.println("");            
+            System.out.println("---------------------------------------------- ");
+
+            int num = 0;
+            while (rs.next()) {
+                System.out.print( num );
+                for( int i = 0; i< columnCount; i++ ){
+                    System.out.print( "\t" );
+                    System.out.print( rs.getString(i+1) );
+                }
+                System.out.println("");
+                num++;
+            }
+
         } catch (Exception e) {
+            try {
+                connection.rollback();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
             e.printStackTrace();
         }
 ```
-
-### TODO
-Virutoso PreparedStatement : Use PreparedStatement of Virtuoso Driver 
-
 
 ### Contact
 * Email : jongearl@frotoma.com
