@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Properties>
+    <Property name="log-path">logs/log</Property>
+    <Property name="log-pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%t] [%logger{1.}:%L] - %m%n</Property>
+    <Property name="file-pattern">%d{yyyy-MM-dd}-%i.log.gz</Property>
+  </Properties>
+
+  <Appenders>
+    <RollingFile name="FileAppender" fileName="${log-path}.log"
+      filePattern="${log-path}-${file-pattern}" immediateFlush="false" append="false">
+      <PatternLayout pattern="${log-pattern}" charset="UTF-8"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="15MB"/>
+        <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+      </Policies>
+      <DefaultRolloverStrategy>
+        <Delete basePath="logs/log" maxDepth="1">
+          <IfLastModified age="30d"/>
+        </Delete>
+      </DefaultRolloverStrategy>
+    </RollingFile>
+    <Console name="ConsoleAppender" target="SYSTEM_OUT">
+        <PatternLayout pattern="${log-pattern}" charset="UTF-8"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="com.frotoma" level="debug" additivity="false" includeLocation="true">
+      <AppenderRef ref="FileAppender"/>
+      <AppenderRef ref="ConsoleAppender"/>
+    </Logger>
+  </Loggers>
+</Configuration>
