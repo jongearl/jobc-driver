@@ -11,6 +11,7 @@ LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
 - The same Sparql can be used in LOD, Jena fuseki, and Virtuoso. When using Preparedstatement, '? ' is used as a variable in Sparql just like in Sql.
 - When using preparedstatement in Virtuoso, Sparql uses a different method.
     - e.g.) Use parameters as '??' or use 'INSERT INTO GRAPH' for 'INSERT Data'.
+- Generally, LOD does not support updates.
 
 ###  JobcDriver Attrebute Value
 Divier Name : com.frotoma.jobc.JobcDriver
@@ -29,7 +30,7 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
         * ex) 
         ```
         http://localhost:8080/sparql
-        ```
+        ```        
     * Fuseki : Web address
         * ex) 
         ```
@@ -114,10 +115,6 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
             e.printStackTrace();
         }
 ```
-
-### TODO
-Virutoso PreparedStatement : Use PreparedStatement of Virtuoso Driver 
-
 
 ### Contact
 * Email : jongearl@frotoma.com
