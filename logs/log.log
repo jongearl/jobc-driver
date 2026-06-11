@@ -1,3 +1,0 @@
-2026-06-11 11:51:22.897 [INFO ] [main] [c.f.t.VirtuosoTest:347] - 시작
-2026-06-11 11:51:22.910 [INFO ] [main] [c.f.j.v.VirtuosoSparqlDriver:63] - [VirtuosoSparqlDriver] Virtuoso Sever : jdbc:virtuoso://localhost:1111/CHARSET=UTF-8
-2026-06-11 11:51:22.933 [INFO ] [main] [c.f.j.v.VirtuosoStatement:55] - [Virtuoso] 실행 SQL: SPARQL SELECT * WHERE { graph <http://localhost:8890/DAV> { ?i a <http://xmlns.com/foaf/0.1/Agent> }}
