@@ -21,40 +21,45 @@ public class HikariTest {
         try {            
             conn = HikariDataSourceFactory2.getDataSource().getConnection();
             pstmt = conn.prepareStatement("DROP SILENT GRAPH <http://localhost:8890/DAV>");
-            int cnt = pstmt.executeUpdate();            
+            int cnt = pstmt.executeUpdate();  
+
+            conn.commit();
+
+            pstmt.close();
+            conn.close();
+                      
         } catch (SQLException e) {            
             e.printStackTrace();
         }finally{
-            if( conn != null ){
-                try {
-                    conn.close();
-                } catch (SQLException e) {}
-            }
+            if( pstmt != null ){ try { pstmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
         }
     }
 
     public static void statementTest(){
 
-        Connection connection = null;
+        Connection conn = null;
         Statement stmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = HikariDataSourceFactory2.getDataSource();
-            connection = dataSource.getConnection();            
-            stmt = connection.createStatement();
-            resultSet = stmt.executeQuery(sql);            
+            conn = dataSource.getConnection();            
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);            
 
-            while (resultSet.next()) {
+            while (rs.next()) {
                 System.out
-                        .println(resultSet.getString(1) );
+                        .println(rs.getString(1) );
             }
+
+            rs.close();
+            stmt.close();
+            conn.close();
 
         } catch (Exception e) {
-            try {
-                connection.close();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( stmt != null ){ try { stmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             e.printStackTrace();
         }
 
@@ -63,30 +68,32 @@ public class HikariTest {
 
     public static void preparedStatementTest(){
 
-        Connection connection = null;
+        Connection conn = null;
         PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = HikariDataSourceFactory2.getDataSource();            
-            connection = dataSource.getConnection();            
-            pstmt = connection.prepareStatement(preparedSql);
+            conn = dataSource.getConnection();            
+            pstmt = conn.prepareStatement(preparedSql);
 
             pstmt.setObject(1, ParamBuilder.createIRI("http://localhost:8890/DAV"));               
             pstmt.setObject(2, ParamBuilder.createIRI("http://xmlns.com/foaf/0.1/Agent"));
             
-            resultSet = pstmt.executeQuery();            
+            rs = pstmt.executeQuery();            
 
-            while (resultSet.next()) {
+            while (rs.next()) {
                 System.out
-                        .println(resultSet.getString(1) );
+                        .println(rs.getString(1) );
             }
+
+            rs.close();
+            pstmt.close();
+            conn.close();
 
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( pstmt != null ){ try { pstmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             e.printStackTrace();
         }
 

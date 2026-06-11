@@ -56,6 +56,8 @@ public class VirtuosoTest {
             for( int r : result ){
                 System.out.println("batch result : " + r);
             }
+
+            conn.commit();
             
             //stmt.close();
             pstmt.close();
@@ -203,6 +205,8 @@ public class VirtuosoTest {
             int i = stmt.executeUpdate(insert);
 
             System.out.println( "결과 : "+i );
+
+            conn.commit();
             
             stmt.close();
             conn.close();
@@ -236,6 +240,8 @@ public class VirtuosoTest {
             //int i = stmt.executeUpdate(insert);
 
             System.out.println( "결과 : "+i );
+
+            conn.commit();
             
             //stmt.close();
             pstmt.close();
@@ -269,6 +275,8 @@ public class VirtuosoTest {
             //int i = stmt.executeUpdate(insert);
 
             System.out.println( "결과 : "+i );
+
+            conn.commit();
             
             //stmt.close();
             pstmt.close();
@@ -301,6 +309,8 @@ public class VirtuosoTest {
             //int i = stmt.executeUpdate(insert);
 
             System.out.println( "결과 : "+i );
+
+            conn.commit();
             
             //stmt.close();
             pstmt.close();
@@ -330,6 +340,8 @@ public class VirtuosoTest {
             //int i = stmt.executeUpdate(insert);
 
             System.out.println( "결과 : "+i );
+
+            conn.commit();
             
             //stmt.close();
             pstmt.close();

@@ -18,15 +18,14 @@ public class TestDrop {
             pstmt = conn.prepareStatement("DROP SILENT GRAPH <http://localhost:8890/DAV>");
             int cnt = pstmt.executeUpdate();            
             conn.commit();
+            pstmt.close();
+            conn.close();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }finally{
-            if( conn != null ){
-                try {
-                    conn.close();
-                } catch (SQLException e) {}
-            }
+        }finally{            
+            if( pstmt != null ){ try { pstmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
         }
 
 

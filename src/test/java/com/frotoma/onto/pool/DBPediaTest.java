@@ -3,7 +3,6 @@ package com.frotoma.onto.pool;
 import com.frotoma.jobc.builder.ParamBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +11,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.sql.DataSource;
+
+import org.apache.jena.sparql.function.library.leviathan.pow;
 
 
 public class DBPediaTest {
@@ -41,25 +42,25 @@ public class DBPediaTest {
 
     public static void statementTest(){
 
-        Connection connection = null;
+        Connection conn = null;
         Statement stmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = crateDataSource();            
-            connection = dataSource.getConnection();            
-            stmt = connection.createStatement();
-            resultSet = stmt.executeQuery(sql);            
+            conn = dataSource.getConnection();            
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);            
 
-            while (resultSet.next()) {
-                System.out.println(resultSet.getString(1) + "\t" + resultSet.getString(2) );
+            while (rs.next()) {
+                System.out.println(rs.getString(1) + "\t" + rs.getString(2) );
             }
-
-        } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (Exception e) {            
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( stmt != null ){ try { stmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             e.printStackTrace();
         }
 
@@ -68,21 +69,21 @@ public class DBPediaTest {
 
     public static void preparedStatementTest(){
 
-        Connection connection = null;
-        PreparedStatement stmt = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             DataSource dataSource = crateDataSource();
-            connection = dataSource.getConnection();            
-            stmt = connection.prepareStatement(preparedSql);
+            conn = dataSource.getConnection();            
+            pstmt = conn.prepareStatement(preparedSql);
 
-            stmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
-            stmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
+            pstmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
+            pstmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
             //stmt.setString(2, "South Korea");
             
-            rs = stmt.executeQuery();            
+            rs = pstmt.executeQuery();            
             
-            ResultSetMetaData rsm = stmt.getMetaData();
+            ResultSetMetaData rsm = pstmt.getMetaData();
             int columnCount = rsm.getColumnCount();
             
             
@@ -107,12 +108,14 @@ public class DBPediaTest {
                 num++;
             }
 
+            rs.close();
+            pstmt.close();
+            conn.close();
+
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( pstmt != null ){ try { pstmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             e.printStackTrace();
         }
 

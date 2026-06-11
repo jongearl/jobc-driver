@@ -67,21 +67,21 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
         String user = null;
         String password = null;
 
-        Connection connection = null;
-        PreparedStatement stmt = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             DataSource dataSource = crateDataSource();
-            connection = dataSource.getConnection();            
-            stmt = connection.prepareStatement(preparedSql);
+            conn = dataSource.getConnection();            
+            pstmt = conn.prepareStatement(preparedSql);
 
-            stmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
-            stmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
+            pstmt.setObject(1, ParamBuilder.createIRI("http://dbpedia.org/resource/BTS"));
+            pstmt.setObject(2, ParamBuilder.createIRI("http://dbpedia.org/ontology/bandMember") );
             //stmt.setString(2, "South Korea");
             
-            rs = stmt.executeQuery();            
+            rs = pstmt.executeQuery();            
             
-            ResultSetMetaData rsm = stmt.getMetaData();
+            ResultSetMetaData rsm = pstmt.getMetaData();
             int columnCount = rsm.getColumnCount();
             
             
@@ -106,9 +106,15 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
                 num++;
             }
 
+            rs.close();
+            pstmt.close();
+            conn.close();
+
         } catch (Exception e) {
             try {
-                connection.rollback();
+                rs.close();
+                pstmt.close();
+                conn.close();
             } catch (SQLException e1) {
                 e1.printStackTrace();
             }

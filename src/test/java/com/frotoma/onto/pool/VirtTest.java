@@ -19,28 +19,30 @@ public class VirtTest {
     
     public void statementTest(){
 
-        Connection connection = null;
+        Connection conn = null;
         Statement stmt = null;
-        ResultSet resultSet = null;
+        ResultSet rs = null;
         try {
             DataSource dataSource = HikariDataSourceFactory2.getDataSource();            
-            connection = dataSource.getConnection();            
-            stmt = connection.createStatement();
-            resultSet = stmt.executeQuery(sql);            
+            conn = dataSource.getConnection();            
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);            
 
-            System.out.println("The Connection Object is of Class: " + connection.getClass());
+            System.out.println("The Connection Object is of Class: " + conn.getClass());
 
             int i  =  0;
-            while (resultSet.next()) {
-                System.out.println( (i++) +"\t"+ resultSet.getString(1) + ", " + resultSet.getString(2) );
+            while (rs.next()) {
+                System.out.println( (i++) +"\t"+ rs.getString(1) + ", " + rs.getString(2) );
             }
 
+            rs.close();
+            stmt.close();
+            conn.close();
+
         } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( stmt != null ){ try { stmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             e.printStackTrace();
         }
 
@@ -76,13 +78,9 @@ public class VirtTest {
 
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                rs.close();
-                stmt.close();
-                conn.close();
-            } catch (SQLException e1) {
-                e1.printStackTrace();
-            }
+            if( rs != null ){ try { rs.close(); } catch (SQLException ignore) {} }
+            if( stmt != null ){ try { stmt.close(); } catch (SQLException ignore) {} }
+            if( conn != null ){ try { conn.close(); } catch (SQLException ignore) {} }
             
         }
 
