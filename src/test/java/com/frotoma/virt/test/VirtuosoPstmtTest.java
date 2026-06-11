@@ -70,7 +70,7 @@ public class VirtuosoPstmtTest {
     }
 
 
-    String sql = "SELECT * WHERE { graph <http://localhost:8890/DAV> { <http://wwww.frotoma.com/lod/resource/Agent1> a ?t }}";
+    
         
     /**
      * Rigorous Test :-)
@@ -83,6 +83,9 @@ public class VirtuosoPstmtTest {
             e.printStackTrace();
         }
         // String sql = "SELECT DISTINCT ?g WHERE { graph ?g { ?i a ?t }}";
+        
+        String sql = "SELECT * WHERE { graph <http://localhost:8890/DAV> { <http://wwww.frotoma.com/lod/resource/Agent1> a ?t }}";
+        
         try {
             Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
             Statement stmt = conn.createStatement();
@@ -158,7 +161,7 @@ public class VirtuosoPstmtTest {
         } catch (ClassNotFoundException e) {            
             e.printStackTrace();
         }
-        String sql = "SELECT * WHERE { graph ? { ?i a ? }}";
+        String sql = "SELECT * FROM ? WHERE { graph ? { ?i a ? }}";
         try {
             Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);                                    
             PreparedStatement pstmt = conn.prepareStatement(sql);

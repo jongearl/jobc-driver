@@ -105,7 +105,9 @@ public class OriginalVirtDriverTest {
         }        
     }
     
-    
+    /**
+     * FROM 절에서 URI는 파라메터로 받을 수 없음
+     */
     public void selectPrepared()
     {
         try {
@@ -113,12 +115,12 @@ public class OriginalVirtDriverTest {
         } catch (ClassNotFoundException e) {            
             e.printStackTrace();
         }
-        String sql = "sparql SELECT * WHERE { graph `iri(??)` { ?i a `iri(??)` }}";
+        //String sql = "sparql SELECT * WHERE { graph `iri(??)` { ?i a `iri(??)` }}";
         
         String sql1 = "SPARQL SELECT *\n" +                
-                "FROM iri(??) " +
-                "WHERE {   " +                
-                "  FILTER( ?o = iri(??) ).\n" +
+                "FROM <http://localhost:8890/DAV> " + // DO NOT USE PARAMETER
+                "WHERE {   " +                                
+                "  FILTER( ?o = IRI(??) ).\n" +
                 "  ?doc ?p ?o ." +
                 "} " +
                 "LIMIT 10";        
@@ -129,8 +131,8 @@ public class OriginalVirtDriverTest {
             
             System.out.println(pstmt);
             
-            pstmt.setString(1, "http://localhost:8890/DAV");               
-            pstmt.setString(2, "http://xmlns.com/foaf/0.1/Agent");
+            //pstmt.setString(1, "http://localhost:8890/DAV");
+            pstmt.setString(1, "http://xmlns.com/foaf/0.1/Agent");
             
             ResultSet rs = pstmt.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();            
