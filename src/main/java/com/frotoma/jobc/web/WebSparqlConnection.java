@@ -52,7 +52,8 @@ public class WebSparqlConnection implements Connection{
     private String password = null;
     private Properties info = null;
 
-    private boolean readOnly = false;
+    // Web Always ReadOnly is True
+    private boolean readOnly = true;
 
     public WebSparqlConnection(String url, Properties info) {        
         
@@ -167,7 +168,7 @@ public class WebSparqlConnection implements Connection{
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        this.readOnly = readOnly;        
+        
     }
 
     @Override

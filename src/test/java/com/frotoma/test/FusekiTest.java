@@ -303,14 +303,14 @@ public class FusekiTest {
         logger.info("시작");        
         
         FusekiTest m = new FusekiTest();
-        m.insertSampleData();
+        //m.insertSampleData();
         m.updateAgent0Name();
-        m.updateAgent10_pstmt();
+        // m.updateAgent10_pstmt();
         m.updateAgent0Rel_pstmt();
-        m.selectAllAgent();
-        m.selectAllAgent_pstmt();
+        // m.selectAllAgent();
+        // m.selectAllAgent_pstmt();
         
-        m.deleteAgent1_pstmt();
-        m.DropTest();
+        // m.deleteAgent1_pstmt();
+        // m.DropTest();
     }
 }

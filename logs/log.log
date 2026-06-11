@@ -1,1 +1,15 @@
-2026-06-11 16:20:56.315 [INFO ] [main] [c.f.t.OriginalVirtDriverTest:222] - 시작
+2026-06-11 16:44:47.743 [INFO ] [main] [c.f.t.WebDriverTest:303] - 시작
+2026-06-11 16:44:47.763 [INFO ] [main] [c.f.j.r.APIUpdatePostFusekiService:65] - POST UPDATE SPARQL : INSERT DATA { graph<http://localhost:8890/DAV> { <http://wwww.frotoma.com/lod/resource/Agent0> <http://www.w3.org/2000/01/rdf-schema#label> 'Agent0_Name' } }
+2026-06-11 16:44:47.773 [INFO ] [main] [c.f.j.r.APIUpdatePostFusekiService:98] - POST : http://localhost:3030/jobc/update?update=INSERT+DATA+%7B+graph%3Chttp%3A%2F%2Flocalhost%3A8890%2FDAV%3E+%7B+%3Chttp%3A%2F%2Fwwww.frotoma.com%2Flod%2Fresource%2FAgent0%3E+%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23label%3E+%27Agent0_Name%27+%7D+%7D
+2026-06-11 16:44:47.774 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:115] - ===================  POST Request HEADER ====================
+2026-06-11 16:44:47.775 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - ACCEPT : application/json; charset=utf-8
+2026-06-11 16:44:47.775 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - Content-Type : application/x-www-form-urlencoded; charset=utf-8
+2026-06-11 16:44:47.775 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - Authorization : Basic YWRtaW46MTIzNA==
+2026-06-11 16:44:47.775 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:119] - ================================================
+2026-06-11 16:44:49.184 [INFO ] [main] [c.f.j.r.APIUpdatePostFusekiService:65] - POST UPDATE SPARQL : INSERT DATA { graph <http://localhost:8890/DAV> { <http://wwww.frotoma.com/lod/resource/Agent0> <http://wwww.frotoma.com/lod/resource/rel> "PUHAHA"@ko } } 
+2026-06-11 16:44:49.184 [INFO ] [main] [c.f.j.r.APIUpdatePostFusekiService:98] - POST : http://localhost:3030/jobc/update?update=INSERT+DATA+%7B+graph+%3Chttp%3A%2F%2Flocalhost%3A8890%2FDAV%3E+%7B+%3Chttp%3A%2F%2Fwwww.frotoma.com%2Flod%2Fresource%2FAgent0%3E+%3Chttp%3A%2F%2Fwwww.frotoma.com%2Flod%2Fresource%2Frel%3E+%22PUHAHA%22%40ko+%7D+%7D+
+2026-06-11 16:44:49.185 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:115] - ===================  POST Request HEADER ====================
+2026-06-11 16:44:49.185 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - ACCEPT : application/json; charset=utf-8
+2026-06-11 16:44:49.187 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - Content-Type : application/x-www-form-urlencoded; charset=utf-8
+2026-06-11 16:44:49.187 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:117] - Authorization : Basic YWRtaW46MTIzNA==
+2026-06-11 16:44:49.187 [DEBUG] [main] [c.f.j.r.APIUpdatePostFusekiService:119] - ================================================
