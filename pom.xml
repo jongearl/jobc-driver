@@ -11,6 +11,21 @@
   <name>jobc_driver</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.frotoma.com</url>
+  <description>
+Jobc (java ontology base connection)
+
+LOD, Apache Jena Fuseki, Virtuoso can be used in Java just like JDBC.
+
+Features
+- Execute Sparql on ontology repositories by coding like a general Database Connection.
+- PoolManager is available. (LOD and Fuseki do not manage the actual pool).
+- Can be used like Mybatis.
+- The same Sparql can be used in LOD, Jena fuseki, and Virtuoso. When using Preparedstatement, '? ' is used as a variable in Sparql just like in Sql.
+- When using preparedstatement in Virtuoso, Sparql uses a different method.
+    - e.g.) Use parameters as '??' or use 'INSERT INTO GRAPH' for 'INSERT Data'.
+- Generally, LOD does not support updates.
+  </description>
+  
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -63,8 +78,27 @@
         <artifactId>log4j-slf4j-impl</artifactId>
         <version>2.24.1</version>
     </dependency>
+    <!-- virtuoso -->
+    <dependency>
+        <groupId>unofficial.com.openlink</groupId>
+        <artifactId>virtuoso-jdbc</artifactId>
+        <version>43.3.119</version>
+    </dependency>
+    <!--
+    <dependency>
+        <groupId>virtuoso</groupId>
+        <artifactId>virtuoso</artifactId>
+        <version>3</version>
+        <classifier>virtuoso</classifier>        
+    </dependency>
+    <dependency>
+        <groupId>virtuoso</groupId>
+        <artifactId>virtuosojdbc</artifactId>
+        <version>4</version>        
+    </dependency>     
+    -->
     
-    <!-- =============== 테스트 =============== -->
+    <!-- =============== Test =============== -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
@@ -83,19 +117,6 @@
         <version>3.5.9</version>
         <scope>test</scope>
     </dependency>
-    <!-- virtuoso -->
-    <dependency>
-        <groupId>virtuoso</groupId>
-        <artifactId>virtuoso</artifactId>
-        <version>3</version>
-        <classifier>virtuoso</classifier>        
-    </dependency>
-    <dependency>
-        <groupId>virtuoso</groupId>
-        <artifactId>virtuosojdbc</artifactId>
-        <version>4</version>        
-    </dependency>     
-    
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -104,26 +125,14 @@
     </dependency>
   </dependencies>
 
-  <repositories>
+  <repositories>    
     <repository>
-      <id>frotoma</id>
-      <url>http://192.168.10.80:8082/repository/frotoma-realease/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
+        <id>virtuoso</id>
+        <name>Openlink Virtuoso drivers packages</name>
+        <url>https://maven.pkg.github.com/jeremiehuchet/virtuoso-drivers</url>
     </repository>
   </repositories>
-
-  <distributionManagement>
-    <repository>
-      <id>frotoma</id>
-      <url>http://192.168.10.80:8082/repository/frotoma-realease/</url>
-    </repository>
-  </distributionManagement>
-
+  
   <build>
     <pluginManagement>      
       <plugins>        

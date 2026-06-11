@@ -349,12 +349,12 @@ public class VirtuosoTest {
         VirtuosoTest m = new VirtuosoTest();
 //        m.insertDataTest();
         //m.selectAgent1();
-        //m.selectAllAgent();
+        m.selectAllAgent();
         //m.selectAllOrganization_pstmt();
         //m.updateAgent10();
         //m.updateAgent100_pstmt();
         //m.updateAgent0Name_pstmt();
         //m.deleteAgent0Name_pstmt();
-        m.DropTest();
+//        m.DropTest();
     }
 }
