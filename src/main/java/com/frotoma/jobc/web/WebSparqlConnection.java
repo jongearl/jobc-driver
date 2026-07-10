@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package com.frotoma.jobc.web;
 
+import com.frotoma.jobc.rest.APIMangerService;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -50,29 +51,16 @@ public class WebSparqlConnection implements Connection{
     
     private String user = null;
     private String password = null;
-    private Properties info = null;
+    private APIMangerService apiManager = null;
 
     // Web Always ReadOnly is True
     private boolean readOnly = true;
 
-    public WebSparqlConnection(String url, Properties info) {        
+    public WebSparqlConnection(String url, APIMangerService apiManager) {        
         
         this.url = url;
         
-        this.user = info.getProperty("user");
-        this.password = info.getProperty("password");    
-        
-        if( !info.contains("connecttimeout") ){
-            info.setProperty("connecttimeout", "10000");
-        }
-        if( !info.contains("sockettimeout") ){
-            info.setProperty("sockettimeout", "10000");
-        }
-        if( !info.contains("connectionrequesttimeout") ){
-            info.setProperty("connectionrequesttimeout", "10000");
-        }
-
-        this.info = info;
+        this.apiManager = apiManager;
     }
 
     public String getUrl(){
@@ -88,11 +76,11 @@ public class WebSparqlConnection implements Connection{
     }
 
     public String getValue(String key){
-        return this.info.getProperty(key);
+        return this.apiManager.getProperty(key);
     }
 
-    public Properties info(){
-        return info;
+    public APIMangerService getAPIManger(){
+        return apiManager;
     }
 
     @Override
@@ -168,7 +156,7 @@ public class WebSparqlConnection implements Connection{
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-        
+        this.readOnly = readOnly;
     }
 
     @Override
@@ -403,14 +391,14 @@ public class WebSparqlConnection implements Connection{
 
     @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {        
-        info.setProperty("connecttimeout", "10000");
+        apiManager.setProperty("connecttimeout", "10000");
         
     }
 
     @Override
     public int getNetworkTimeout() throws SQLException {
         // TODO Auto-generated method stub
-        Object timeoutObj = info.getProperty("connecttimeout");
+        Object timeoutObj = apiManager.getProperty("connecttimeout");
         Integer timeout = 0;
         if( timeoutObj != null ){
             timeout = (Integer)(timeoutObj);        

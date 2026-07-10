@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package com.frotoma.jobc.web;
 
+import com.frotoma.jobc.rest.APIMangerService;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
@@ -41,7 +42,9 @@ public class WebSparqlDriver implements java.sql.Driver{
     private static int MINOR_VERSION = 1;
 
     private String url = null;
-
+    
+    private APIMangerService apiMangeerService = null;
+    
     static {
         try {
           DriverManager.registerDriver(new WebSparqlDriver());
@@ -56,10 +59,15 @@ public class WebSparqlDriver implements java.sql.Driver{
             return null;
         }
         
-        Properties props = urlToInfo(url, info);        
-        return new WebSparqlConnection(this.url, props);
-    }
-    
+        if( apiMangeerService == null ){
+            this.url = extractURL(url);
+            Properties props = urlToInfo(info);
+            // url 값은 변형됨
+            apiMangeerService = new APIMangerService(this.url, info);
+        }
+        
+        return new WebSparqlConnection(this.url, apiMangeerService);
+    }    
     
     protected String extractURL(String urlString){        
         String url = urlString;
@@ -69,11 +77,7 @@ public class WebSparqlDriver implements java.sql.Driver{
         return url;
     }
 
-    protected Properties urlToInfo(String urlString, Properties _info){             
-        
-        String url = extractURL( urlString );
-        
-        this.url = url;
+    protected Properties urlToInfo(Properties _info){             
         
         Properties props = new Properties();        
         Iterator<Object> it = _info.keySet().iterator();

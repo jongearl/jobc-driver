@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package com.frotoma.jobc.fuseki;
 
+import com.frotoma.jobc.rest.APIMangerService;
 import com.frotoma.jobc.virt.VirtuosoSparqlDriver;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -45,6 +46,8 @@ public class FusekiSparqlDriver implements java.sql.Driver{
     private static int MINOR_VERSION = 1;
     
     private String url = null;
+    
+    private APIMangerService apiMangeerService = null;
 
     static {
         try {
@@ -59,8 +62,14 @@ public class FusekiSparqlDriver implements java.sql.Driver{
         
         if (!acceptsURL(url)) { return null; }
         
-        Properties props = urlToInfo(url, info);        
-        return new FusekiSparqlConnection(this.url, props);
+        if( apiMangeerService == null ){            
+            this.url = extractURL( url );   
+            Properties props = urlToInfo(info);
+            apiMangeerService = new APIMangerService(this.url, info);
+        }
+        
+        //Properties props = urlToInfo(url, info);        
+        return new FusekiSparqlConnection(this.url, apiMangeerService);
     }
     
     protected String extractURL(String urlString){
@@ -71,10 +80,7 @@ public class FusekiSparqlDriver implements java.sql.Driver{
         return url;
     }
 
-    protected Properties urlToInfo(String urlString, Properties _info){             
-        
-        String url = extractURL( urlString );   
-        this.url = url;
+    protected Properties urlToInfo(Properties _info){
        
         Properties props = new Properties();        
         Iterator<Object> it = _info.keySet().iterator();

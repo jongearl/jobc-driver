@@ -33,8 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.frotoma.jobc.obj.LiteralObj;
-import com.frotoma.jobc.rest.APISelectGetService;
-import com.frotoma.jobc.rest.APISelectPostService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -79,12 +77,14 @@ public class WebSparqlStatement implements Statement{
         
         if( sparqlConnection.getValue("method") == null || sparqlConnection.getValue("method").equals("get")){
             // GET            
-            APISelectGetService get = new APISelectGetService();
-            result = get.api(sparqlConnection.getUrl(), param, sparqlConnection.info());      
+            result = sparqlConnection.getAPIManger().get(sparqlConnection.getUrl(), param);
+            //APISelectGetService get = new APISelectGetService();
+            //result = get.api(sparqlConnection.getUrl(), param, sparqlConnection.info());      
         }else{
             // POST
-            APISelectPostService post = new APISelectPostService();
-            result = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());            
+            result = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param);
+//            APISelectPostService post = new APISelectPostService();
+//            result = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());            
         }
         
         if( result == null ){
@@ -120,8 +120,9 @@ public class WebSparqlStatement implements Statement{
             // jsonString  = restAPIService.post(sparqlConnection.getUrl(), param, sparqlConnection.info());
             
             // POST
-            APISelectPostService post = new APISelectPostService();
-            jsonString = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());
+            jsonString = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param);
+//            APISelectPostService post = new APISelectPostService();
+//            jsonString = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());
             return jsonString;
         } catch (JobcDriverException ex) {
             logger.error( ex.toString() );

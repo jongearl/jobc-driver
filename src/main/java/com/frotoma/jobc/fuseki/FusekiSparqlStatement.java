@@ -28,9 +28,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.frotoma.jobc.rest.APISelectGetService;
-import com.frotoma.jobc.rest.APISelectPostService;
-import com.frotoma.jobc.rest.APIUpdatePostFusekiService;
 import com.frotoma.jobc.web.WebSparqlConnection;
 import com.frotoma.jobc.web.WebSparqlResultset;
 import com.frotoma.jobc.web.WebSparqlStatement;
@@ -54,13 +51,14 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         
         if( getSparqlConnection().getValue("method") == null || getSparqlConnection().getValue("method").equals("get")){
             // GET
-            // GET
-            APISelectGetService get = new APISelectGetService();
-            result = get.api(getURLQuery(), param, getSparqlConnection().info());      
+            result = getSparqlConnection().getAPIManger().get(getURLQuery(), param);
+//            APISelectGetService get = new APISelectGetService();
+//            result = get.api(getURLQuery(), param, getSparqlConnection().info());      
         }else{
             // POST
-            APISelectPostService post = new APISelectPostService();
-            result = post.api(getURLQuery(), param, getSparqlConnection().info());            
+            result = getSparqlConnection().getAPIManger().post(getURLQuery(), param);
+//            APISelectPostService post = new APISelectPostService();
+//            result = post.api(getURLQuery(), param, getSparqlConnection().info());            
         }
 
         WebSparqlResultset rs = null;
@@ -83,8 +81,9 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         // jsonString  = restAPIService.post(sparqlConnection.getUrl(), param, sparqlConnection.info());
 
         // POST            
-        APIUpdatePostFusekiService post = new APIUpdatePostFusekiService();
-        jsonString = post.api(getURLUpdate(), param, getSparqlConnection().info());
+        jsonString = getSparqlConnection().getAPIManger().post(getURLUpdate(), param);
+//        APIUpdatePostFusekiService post = new APIUpdatePostFusekiService();
+//        jsonString = post.api(getURLUpdate(), param, getSparqlConnection().info());
         return jsonString;
     }
 
