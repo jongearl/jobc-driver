@@ -80,19 +80,21 @@ public class WebSparqlResultset implements ResultSet{
         }
         
         // Header 파싱
-        JSONObject head = jsonParser.getJSONObject("head");
-        JSONArray vars = head.getJSONArray("vars");
-        this.labels = new ArrayList<String>();
-        for( int i = 0; i< vars.length(); i++ ){
-            String var = vars.getString(i);
-            labels.add(var);            
+        if( jsonParser.has("head") && jsonParser.has("results") ){            
+            JSONObject head = jsonParser.getJSONObject("head");
+            JSONArray vars = head.getJSONArray("vars");
+            this.labels = new ArrayList<String>();
+            for( int i = 0; i< vars.length(); i++ ){
+                String var = vars.getString(i);
+                labels.add(var);            
+            }
+            // Results 파싱
+            JSONObject results = jsonParser.getJSONObject("results");
+            this.bindings = results.getJSONArray("bindings");
+            this.lastIdx = this.bindings.length();
+            this.stmt.setMaxRows(this.lastIdx);
+            this.stmt.setMaxFieldSize(this.labels.size());
         }
-        // Results 파싱
-        JSONObject results = jsonParser.getJSONObject("results");
-        this.bindings = results.getJSONArray("bindings");
-        this.lastIdx = this.bindings.length();
-        this.stmt.setMaxRows(this.lastIdx);
-        this.stmt.setMaxFieldSize(this.labels.size());
     }
 
     public WebSparqlResultset(Statement stmt) throws SQLException {

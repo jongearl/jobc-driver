@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PareparedSparqlTest",
+            "request": "launch",
+            "mainClass": "com.frotoma.onto.sparql.PareparedSparqlTest",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
+            "name": "PareparedUpdateSparqlTest",
+            "request": "launch",
+            "mainClass": "com.frotoma.onto.sparql.PareparedUpdateSparqlTest",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
             "name": "FusekiTest",
             "request": "launch",
             "mainClass": "com.frotoma.test.FusekiTest",

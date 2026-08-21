@@ -30,7 +30,7 @@ public class PareparedUpdateSparqlTest {
         
        
         // JENA (정상 작동)
-        String url = "jdbc:http://localhost:3030/mofadocu/sparql&method=post";
+        String url = "jobc:fuseki:http://localhost:3030/jobc/sparql";
         String user ="admin";
         String password ="1234";
         
@@ -42,7 +42,7 @@ public class PareparedUpdateSparqlTest {
         bds = new BasicDataSource();
         
         // DBMS 계정 및 초기 설정
-        bds.setDriverClassName("com.frotoma.jdbc.fuseki.FusekiSparqlDriver");
+        bds.setDriverClassName("com.frotoma.jobc.fuseki.FusekiSparqlDriver");
         bds.setUsername(user);
         bds.setPassword(password);
         bds.setUrl(url);
@@ -57,6 +57,24 @@ public class PareparedUpdateSparqlTest {
 
     private Connection getConnection() throws SQLException{
         return bds.getConnection();
+    }
+
+    public void insertData(){
+        String sql = "PREFIX : <http://example.org/> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA { GRAPH <http://example.org/test> {   <<:TravelA :loc :Seoul>> :start \"2026-01-01\"^^xsd:date . <<:TravelA :loc :Seoul>> :end \"2026-01-10\"^^xsd:date .  } }";
+        try {
+            Connection conn = getConnection();            
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            int i = pstmt.executeUpdate();                        
+            
+            logger.info( " >> "+i  );
+            
+            pstmt.close();
+            conn.close();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }         
+
     }
 
 
@@ -88,7 +106,8 @@ public class PareparedUpdateSparqlTest {
         System.setProperty("log4j.configurationFile", "conf/log4j2.xml");
 
         PareparedUpdateSparqlTest d = new PareparedUpdateSparqlTest();
-        d.selectTrue();
+        d.insertData();    
+        //d.selectTrue();
 
     }
 

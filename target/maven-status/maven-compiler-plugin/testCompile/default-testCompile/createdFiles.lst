@@ -1,0 +1,15 @@
+com\frotoma\test\OriginalVirtDriverTest.class
+com\frotoma\onto\pool\HikariTest.class
+com\frotoma\onto\pool\OriginalVirtDataSourceFactory.class
+com\frotoma\onto\sparql\PareparedUpdateSparqlTest.class
+com\frotoma\test\VirtuosoConductorTest.class
+com\frotoma\test\VirtuosoTest.class
+com\frotoma\virt\test\VirtuosoPstmtTest.class
+com\frotoma\onto\pool\DBPediaTest.class
+com\frotoma\onto\pool\VirtTest.class
+com\frotoma\onto\sparql\JenaSparqlParam.class
+com\frotoma\onto\sparql\PareparedSparqlTest.class
+com\frotoma\onto\pool\TestDrop.class
+com\frotoma\test\WebDriverTest.class
+com\frotoma\onto\pool\HikariDataSourceFactory2.class
+com\frotoma\test\FusekiTest.class

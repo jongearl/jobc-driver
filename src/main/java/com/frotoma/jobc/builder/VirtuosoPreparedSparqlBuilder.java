@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import org.apache.jena.iri.IRI;
+import org.apache.jena.irix.IRIx;
 
 /**
  *
@@ -30,7 +30,7 @@ public class VirtuosoPreparedSparqlBuilder {
     
     public void addParameter(int idx , Object obj){        
         if( this.columnHeadertype.get(idx) != null ) return;        
-        if( obj instanceof IRI){
+        if( obj instanceof IRIx){
             this.columnHeadertype.put(idx, Boolean.TRUE);
         }else{
             this.columnHeadertype.put(idx, Boolean.FALSE);

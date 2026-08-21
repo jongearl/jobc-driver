@@ -56,6 +56,7 @@ public class APIUpdatePostFusekiService extends APISelectPostService{
 
     private static final Logger logger = LoggerFactory.getLogger(APIUpdatePostFusekiService.class);
 
+    private static final String ACCEPT_SPARQL_UPDATE = "application/sparql-update; charset=utf-8";
     private static final String ACCEPT_SPARQL = "application/sparql-results+json; charset=utf-8";
     private static final String ACCEPT_JSON = "application/json; charset=utf-8";
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8";
@@ -68,7 +69,7 @@ public class APIUpdatePostFusekiService extends APISelectPostService{
         HttpPost httpPost = new HttpPost( urlString );
         
         // 일반 SQL은 select만 가능
-        httpPost.setHeader("ACCEPT", ACCEPT_SPARQL);
+        httpPost.setHeader("ACCEPT", ACCEPT_SPARQL_UPDATE);
         httpPost.setHeader("ACCEPT", ACCEPT_JSON);        
         httpPost.setHeader("Content-Type", CONTENT_TYPE);
         

@@ -27,8 +27,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Date;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
-import org.apache.jena.iri.IRI;
-import org.apache.jena.iri.IRIFactory;
+import org.apache.jena.irix.IRIx;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.ResourceFactory;
 
@@ -46,9 +45,8 @@ public class ParamBuilder {
         return url;
     }
     
-    public static IRI createIRI( String iriString){
-        IRIFactory iriFactory = IRIFactory.iriImplementation();
-        return iriFactory.create(iriString);
+    public static IRIx createIRI( String iriString){
+        return IRIx.create(iriString);
     }
     
     public static Literal createLiteral(String str) {

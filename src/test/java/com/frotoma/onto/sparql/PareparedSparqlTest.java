@@ -16,6 +16,8 @@ public class PareparedSparqlTest {
 
     private BasicDataSource bds = null;
 
+    private static final String DRIVER = "com.frotoma.jobc.fuseki.FusekiSparqlDriver";
+
     public PareparedSparqlTest(){
 
       // 관리시스템 (작동)
@@ -30,7 +32,11 @@ public class PareparedSparqlTest {
 //        String password = "cmmsk$#@!";
         
         // JENA (정상 작동)
-        String url = "jdbc:http://localhost:3030/mofaservice/sparql&method=post";
+        // String url = "jdbc:http://localhost:3030/jobc/sparql&method=post";
+        // String user ="admin";
+        // String password ="1234";
+
+        String url = "jdbc:http://localhost:3030/jobc/update";
         String user ="admin";
         String password ="1234";
         
@@ -44,7 +50,7 @@ public class PareparedSparqlTest {
         bds = new BasicDataSource();
         
         // DBMS 계정 및 초기 설정
-        bds.setDriverClassName("com.frotoma.jdbc.web.SparqlWebDriver");
+        bds.setDriverClassName(DRIVER);
         bds.setUsername(user);
         bds.setPassword(password);
         bds.setUrl(url);

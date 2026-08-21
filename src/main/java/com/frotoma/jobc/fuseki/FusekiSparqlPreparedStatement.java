@@ -59,7 +59,7 @@ public class FusekiSparqlPreparedStatement implements PreparedStatement{
 
     private FusekiSparqlStatement statement = null;
     
-    private List<String> batchQuery = new ArrayList();
+    private List<String> batchQuery = new ArrayList<>();
 
     public FusekiSparqlPreparedStatement(FusekiSparqlConnection sparqlConnection, String sql){        
         this.statement = new FusekiSparqlStatement( sparqlConnection );        

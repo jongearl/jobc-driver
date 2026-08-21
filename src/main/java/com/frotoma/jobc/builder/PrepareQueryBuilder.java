@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.jena.iri.IRI;
+import org.apache.jena.irix.IRIx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +59,7 @@ public class PrepareQueryBuilder {
         }else if( obj instanceof Date ){
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             val = "\""+sdf.format(obj)+"\"";
-        }else if( obj instanceof IRI){
+        }else if( obj instanceof IRIx){
             val = "<"+ obj +">";
         }else if( obj instanceof URL){    
             val = "\""+ obj +"\"";

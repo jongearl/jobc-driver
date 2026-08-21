@@ -26,7 +26,7 @@ package com.frotoma.jobc.builder;
 import java.net.URL;
 import java.util.Calendar;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
-import org.apache.jena.iri.IRI;
+import org.apache.jena.irix.IRIx;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.rdf.model.Literal;
 
@@ -51,8 +51,8 @@ public class PrepareSparqlBuilder {
         pss.setLiteral(getIndex(idx), obj.toString(), XSDDatatype.XSDanyURI);
     }
     
-    public void addParameter( int idx , IRI obj){        
-        pss.setIri(getIndex(idx), (IRI)obj);
+    public void addParameter( int idx , IRIx obj){        
+        pss.setIri(getIndex(idx), obj);
     }
     
     public void addParameter( int idx , String obj){
@@ -88,8 +88,8 @@ public class PrepareSparqlBuilder {
     }
     
     public void addParameter( int idx , Object obj){
-        if( obj instanceof IRI ){
-            addParameter(idx, (IRI)obj);        
+        if( obj instanceof IRIx ){
+            addParameter(idx, (IRIx)obj);        
         }else if( obj instanceof Literal ){    
             addParameter(idx, (Literal)obj);                
         }else{

@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.jena.iri.IRI;
+import org.apache.jena.irix.IRIx;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -233,9 +233,9 @@ public class VirtuosoPreparedStatement4psmt implements PreparedStatement {
             }else if(param instanceof Double){
                 logger.info("[Virtuoso] SPARQL PARAM : " + param );
                 this.pstmt.setDouble(i, (Double)param);
-            }else if(param instanceof IRI){
+            }else if(param instanceof IRIx){
                 logger.info("[Virtuoso] SPARQL PARAM : " + param );                
-                this.pstmt.setString(i, ((IRI)param).toString());
+                this.pstmt.setString(i, ((IRIx)param).toString());
             }else if(param instanceof Calendar){
                 logger.info("[Virtuoso] SPARQL PARAM : " + param );
                 this.pstmt.setObject(i, (Calendar)param);

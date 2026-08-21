@@ -103,8 +103,8 @@ public class HikariTest {
         System.setProperty("log4j.configurationFile", "conf/log4j2.xml");
         System.setProperty("dbpool.config", "conf/dbpool.properties");
         
-        drop();
-//        statementTest();
+//        drop();
+        statementTest();
          //preparedStatementTest();        
     }
 

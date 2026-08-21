@@ -33,7 +33,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import org.apache.jena.iri.IRI;
+import org.apache.jena.irix.IRIx;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -270,7 +270,7 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
             }else if(param instanceof Double){
                 logger.info("[Virtuoso] SPARQL PARAM : " + param );
                 builder.addParameter(i, (Double)param);
-            }else if(param instanceof IRI){
+            }else if(param instanceof IRIx){
                 logger.info("[Virtuoso] SPARQL PARAM : " + param );
                 builder.addParameter(i, (URL)param);
             }else if(param instanceof Calendar){

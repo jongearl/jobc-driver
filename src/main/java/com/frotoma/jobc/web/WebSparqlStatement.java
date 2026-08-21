@@ -34,9 +34,6 @@ import java.util.Map;
 
 import com.frotoma.jobc.obj.LiteralObj;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,6 +135,8 @@ public class WebSparqlStatement implements Statement{
         
         String jsonString = updateQueryInternal(sql);        
 
+        logger.debug("RESPONSE JSON : "+jsonString);
+
         if( jsonString == null ){
             updateCount = 0;
             return updateCount;
@@ -148,6 +147,7 @@ public class WebSparqlStatement implements Statement{
             return updateCount;
         }
 
+        // 이전 버전에서는 update 건수를 결과로 리턴 했음
         while( rs.next() ){
             Object obj = rs.getObject(1);
             if( obj instanceof LiteralObj ){
@@ -156,6 +156,11 @@ public class WebSparqlStatement implements Statement{
             }else if( obj instanceof String ){                
                 updateCount = Integer.parseInt(obj.toString());
             }
+        }
+
+        // 결과가 없다면 updateCount를 0으로 설정 (통과했기 때문에)
+        if( updateCount < 0 ){
+            updateCount = 0;
         }
         rs.close();
 
@@ -395,16 +400,68 @@ public class WebSparqlStatement implements Statement{
 
 
     public boolean isJson(String json){
-        try {
-            new JSONObject(json);
-        } catch (JSONException ex) {
-            try {
-                new JSONArray(json);
-            } catch (JSONException ex1) {
-                return false;
+        if( json == null || json.isEmpty() ){
+            return false;
+        }
+
+        int start = 0;
+        int end = json.length() - 1;
+        while( start <= end && Character.isWhitespace(json.charAt(start)) ){
+            start++;
+        }
+        while( end >= start && Character.isWhitespace(json.charAt(end)) ){
+            end--;
+        }
+
+        if( start > end ){
+            return false;
+        }
+
+        char first = json.charAt(start);
+        char last = json.charAt(end);
+        if( (first != '{' || last != '}') && (first != '[' || last != ']') ){
+            return false;
+        }
+
+        char[] bracketStack = new char[end - start + 1];
+        int stackDepth = 0;
+        boolean quoted = false;
+        boolean escaped = false;
+
+        for( int i = start; i <= end; i++ ){
+            char ch = json.charAt(i);
+
+            if( quoted ){
+                if( escaped ){
+                    escaped = false;
+                }else if( ch == '\\' ){
+                    escaped = true;
+                }else if( ch == '"' ){
+                    quoted = false;
+                }else if( ch < 0x20 ){
+                    return false;
+                }
+                continue;
+            }
+
+            if( ch == '"' ){
+                quoted = true;
+            }else if( ch == '{' ){
+                bracketStack[stackDepth++] = ch;
+            }else if( ch == '}' ){
+                if( stackDepth == 0 || bracketStack[--stackDepth] != '{' ){
+                    return false;
+                }
+            }else if( ch == '[' ){
+                bracketStack[stackDepth++] = ch;
+            }else if( ch == ']' ){
+                if( stackDepth == 0 || bracketStack[--stackDepth] != '[' ){
+                    return false;
+                }
             }
         }
-        return true;
+
+        return !quoted && !escaped && stackDepth == 0;
     }
     
 }
