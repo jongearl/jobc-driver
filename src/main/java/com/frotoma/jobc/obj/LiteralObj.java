@@ -24,13 +24,11 @@ SOFTWARE.
 package com.frotoma.jobc.obj;
 
 import java.math.BigDecimal;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import com.frotoma.jobc.LiteralUtil;
+import com.frotoma.jobc.LiteralUtil.LiteralParts;
 
 public class LiteralObj {
-
-
-    public static final Pattern literalPattern = Pattern.compile("^[\"|\']((.|\n|\r)*?)[\"|\']((@(.{2}))$|(\\^\\^<(.+?)>)$|(\\^\\^(.+?))$)");
     
     private String datatype = null;
 
@@ -42,11 +40,12 @@ public class LiteralObj {
     
 
     public LiteralObj (String valueString){
-        Matcher m = literalPattern.matcher(valueString);
-        if( m.find() ){
-            String value = m.group(1);
-            String lang = m.group(5);
-            String datatype = m.group(9);
+        LiteralParts parts = LiteralUtil.parseLiteral(valueString);
+        //LiteralParts parts = parseLiteral(valueString);
+        if( parts != null ){
+            String value = parts.getValue();
+            String lang = parts.getLang();
+            String datatype = parts.getDatatype();
 
             this.lang = lang;
             this.datatype = datatype;
@@ -92,7 +91,6 @@ public class LiteralObj {
             this.value = valueString;
         }
     }
-
 
     public String getDatatype() {
         return datatype;

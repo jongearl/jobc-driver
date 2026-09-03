@@ -1,16 +1,5 @@
-2026-08-21 14:16:12.331 [DEBUG] [main] [c.f.j.r.APIMangerService:186] - POST SPARQL : null
-2026-08-21 14:16:12.333 [DEBUG] [main] [c.f.j.r.APIMangerService:187] - POST URL : http://localhost:3030/jobc/update
-2026-08-21 14:16:12.334 [DEBUG] [main] [c.f.j.r.APIMangerService:188] - POST PARAM : {update=PREFIX : <http://example.org/> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> INSERT DATA { GRAPH <http://example.org/test> {   <<:TravelA :loc :Seoul>> :start "2026-01-01"^^xsd:date . <<:TravelA :loc :Seoul>> :end "2026-01-10"^^xsd:date .  } } }
-2026-08-21 14:16:12.338 [DEBUG] [main] [c.f.j.r.APIMangerService:208] - POST AUTH : admin / PASSWORD 
-2026-08-21 14:16:12.344 [DEBUG] [main] [c.f.j.r.APIMangerService:222] - POST URL : http://localhost:3030/jobc/update?update=PREFIX+%3A+%3Chttp%3A%2F%2Fexample.org%2F%3E+PREFIX+xsd%3A+%3Chttp%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema%23%3E+INSERT+DATA+%7B+GRAPH+%3Chttp%3A%2F%2Fexample.org%2Ftest%3E+%7B+++%3C%3C%3ATravelA+%3Aloc+%3ASeoul%3E%3E+%3Astart+%222026-01-01%22%5E%5Exsd%3Adate+.+%3C%3C%3ATravelA+%3Aloc+%3ASeoul%3E%3E+%3Aend+%222026-01-10%22%5E%5Exsd%3Adate+.++%7D+%7D+
-2026-08-21 14:16:12.344 [DEBUG] [main] [c.f.j.r.APIMangerService:226] - ===================  POST Request HEADER ====================
-2026-08-21 14:16:12.345 [DEBUG] [main] [c.f.j.r.APIMangerService:228] - ACCEPT : application/json; charset=utf-8
-2026-08-21 14:16:12.345 [DEBUG] [main] [c.f.j.r.APIMangerService:228] - Content-Type : application/x-www-form-urlencoded; charset=utf-8
-2026-08-21 14:16:12.346 [DEBUG] [main] [c.f.j.r.APIMangerService:228] - Authorization : Basic YWRtaW46MTIzNA==
-2026-08-21 14:16:12.346 [DEBUG] [main] [c.f.j.r.APIMangerService:230] - ================================================
-2026-08-21 14:16:12.743 [DEBUG] [main] [c.f.j.w.WebSparqlStatement:138] - RESPONSE JSON : { 
-  "statusCode" : 200 ,
-  "message" : "Update succeeded"
-}
-
-2026-08-21 14:16:12.749 [INFO ] [main] [c.f.o.s.PareparedUpdateSparqlTest:69] -  >> 0
+2026-08-27 11:10:09.198 [INFO ] [main] [c.f.t.WebDriverTest:303] - 시작
+2026-08-27 11:10:09.786 [DEBUG] [main] [c.f.j.r.APIMangerService:144] - GET SPARQL : PREFIX : <http:exmaple.org> SELECT *  WHERE {  graph <http://localhost:8890/DAV>  {  ?i a <http://xmlns.com/foaf/0.1/Agent> }} 
+2026-08-27 11:10:09.787 [DEBUG] [main] [c.f.j.r.APIMangerService:145] - GET URL : http://localhost:3030/jobc/sparql?query=PREFIX+%3A+%3Chttp%3Aexmaple.org%3E+SELECT+*++WHERE+%7B++graph+%3Chttp%3A%2F%2Flocalhost%3A8890%2FDAV%3E++%7B++%3Fi+a+%3Chttp%3A%2F%2Fxmlns.com%2Ffoaf%2F0.1%2FAgent%3E+%7D%7D+
+2026-08-27 11:10:09.787 [DEBUG] [main] [c.f.j.r.APIMangerService:146] - GET PARAM : {query=PREFIX : <http:exmaple.org> SELECT *  WHERE {  graph <http://localhost:8890/DAV>  {  ?i a <http://xmlns.com/foaf/0.1/Agent> }} }
+2026-08-27 11:10:09.791 [DEBUG] [main] [c.f.j.r.APIMangerService:161] - GET AUTH : admin / PASSWORD 

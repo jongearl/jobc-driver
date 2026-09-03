@@ -25,6 +25,7 @@ package com.frotoma.jobc.web;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 public class WebSparqlResultSetMetaData implements ResultSetMetaData{
@@ -32,7 +33,7 @@ public class WebSparqlResultSetMetaData implements ResultSetMetaData{
     private List<String> labels = null;
 
     WebSparqlResultSetMetaData(List<String> labels){
-        this.labels = labels;
+        this.labels = labels == null ? Collections.emptyList() : labels;
     }
 
     @Override
@@ -48,11 +49,8 @@ public class WebSparqlResultSetMetaData implements ResultSetMetaData{
     }
 
     @Override
-    public int getColumnCount() throws SQLException {
-        if( labels == null && labels.isEmpty() ){
-            return 0;
-        }
-        return labels.size();        
+    public int getColumnCount() throws SQLException {        
+        return labels.size();
     }
 
     @Override
@@ -99,20 +97,19 @@ public class WebSparqlResultSetMetaData implements ResultSetMetaData{
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        column = column -1 ;
-        if( labels == null && labels.size() >= column ){
-            return null;
-        }        
-        return labels.get(column);
+        return getLabel(column);
     }
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        column = column -1 ;
-        if( labels == null && labels.size() >= column ){
-            return null;
+        return getLabel(column);
+    }
+
+    private String getLabel(int column) throws SQLException {
+        if( column < 1 || column > labels.size() ){
+            throw new SQLException("Invalid column index: " + column);
         }
-        return labels.get(column);
+        return labels.get(column - 1);
     }
 
     @Override

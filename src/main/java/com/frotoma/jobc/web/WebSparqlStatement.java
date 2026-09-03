@@ -30,7 +30,10 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.frotoma.jobc.obj.LiteralObj;
 
@@ -38,6 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WebSparqlStatement implements Statement{
+
+    private static final Pattern SPARQL_PROLOGUE = Pattern.compile(
+            "(?is)^(?:PREFIX\\s+[^\\s:]*:\\s*<[^>]*>|BASE\\s*<[^>]*>)\\s*");
     
     private static final Logger logger = LoggerFactory.getLogger(WebSparqlStatement.class);
     
@@ -232,20 +238,23 @@ public class WebSparqlStatement implements Statement{
     @Override
     public boolean execute(String sql) throws SQLException {
 
+        String normalizedSql = normalizeSql(sql);
         boolean isQuery = true;
-        if( sql.toUpperCase().startsWith("SELECT") ){
+        if( normalizedSql.startsWith("SELECT") ){
             isQuery = true;
-        }else if( sql.toUpperCase().startsWith("CONSTRUCT")){
+        }else if( normalizedSql.startsWith("CONSTRUCT")){
             isQuery = true;
-        }else if( sql.toUpperCase().startsWith("ASK")){
+        }else if( normalizedSql.startsWith("ASK")){
             isQuery = true;    
-        }else if( sql.toUpperCase().startsWith("CREATE") ){
+        }else if( normalizedSql.startsWith("DESCRIBE")){
+            isQuery = true;
+        }else if( normalizedSql.startsWith("CREATE") ){
             isQuery = false;
-        }else if( sql.toUpperCase().startsWith("DROP") ){
+        }else if( normalizedSql.startsWith("DROP") ){
             isQuery = false;
-        }else if( sql.toUpperCase().startsWith("INSERT") ){
+        }else if( normalizedSql.startsWith("INSERT") ){
             isQuery = false;
-        }else if( sql.toUpperCase().startsWith("DELETE") ){
+        }else if( normalizedSql.startsWith("DELETE") ){
             isQuery = false;
         }else{
             isQuery = false;
@@ -258,6 +267,16 @@ public class WebSparqlStatement implements Statement{
             int i = executeUpdate(sql);
             return i > 0;
         }        
+    }
+
+    private String normalizeSql(String sql){
+        String normalizedSql = sql == null ? "" : sql.trim();
+        Matcher matcher = SPARQL_PROLOGUE.matcher(normalizedSql);
+        while( matcher.find() ){
+            normalizedSql = normalizedSql.substring(matcher.end()).trim();
+            matcher = SPARQL_PROLOGUE.matcher(normalizedSql);
+        }
+        return normalizedSql.toUpperCase(Locale.ROOT);
     }
 
     @Override

@@ -72,7 +72,7 @@ public class FusekiTest {
         } catch (ClassNotFoundException e) {            
             e.printStackTrace();
         }
-        String sql = "SELECT * \n"
+        String sql = "PREFIX : <http:exmaple.org> SELECT * \n"
                 + "WHERE { \n"
                 + "graph <http://localhost:8890/DAV> { \n"
                 + "?s ?p ?o . \n"
@@ -113,7 +113,7 @@ public class FusekiTest {
         } catch (ClassNotFoundException e) {            
             e.printStackTrace();
         }
-        String sql = "SELECT *  WHERE {  graph ?  {  ?i a ? }}";
+        String sql = "PREFIX : <http:exmaple.org> SELECT *  WHERE {  graph ?  {  ?i a ? }}";
         try {
             Connection conn = DriverManager.getConnection(URL, user, password);
             PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -303,12 +303,12 @@ public class FusekiTest {
         logger.info("시작");        
         
         FusekiTest m = new FusekiTest();
-        m.insertSampleData();
+        // m.insertSampleData();
         // m.updateAgent0Name();
         // m.updateAgent10_pstmt();
         //m.updateAgent0Rel_pstmt();
-        // m.selectAllAgent();
-        // m.selectAllAgent_pstmt();        
+        //m.selectAllAgent();
+         m.selectAllAgent_pstmt();        
         // m.deleteAgent1_pstmt();
         //m.DropTest();
     }

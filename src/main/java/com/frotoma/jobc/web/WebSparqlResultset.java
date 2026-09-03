@@ -25,6 +25,8 @@ package com.frotoma.jobc.web;
 
 import com.frotoma.jobc.obj.LiteralObj;
 import com.frotoma.jobc.obj.ResourceObj;
+import com.google.gson.JsonArray;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -78,9 +80,27 @@ public class WebSparqlResultset implements ResultSet{
                 throw new SQLException(jsonString);
             }
         }
+
+
+        if( jsonParser.has("head") && jsonParser.has("boolean") ){            
+            String columnLabel = "ask";
+            this.labels = new ArrayList<String>();
+            this.labels.add(columnLabel);
+            this.bindings = new JSONArray();
+
+            JSONObject binding = new JSONObject();
+            binding.put(columnLabel, new JSONObject()
+                    .put("type", "literal")
+                    .put("value", String.valueOf(jsonParser.getBoolean("boolean"))));
+            this.bindings.put(binding);
+
+            this.lastIdx = this.bindings.length();
+            this.stmt.setMaxRows(this.lastIdx);
+            this.stmt.setMaxFieldSize(this.labels.size());
+        }
         
-        // Header 파싱
-        if( jsonParser.has("head") && jsonParser.has("results") ){            
+        // Header 파싱        
+        else if( jsonParser.has("head") && jsonParser.has("results") ){            
             JSONObject head = jsonParser.getJSONObject("head");
             JSONArray vars = head.getJSONArray("vars");
             this.labels = new ArrayList<String>();
@@ -122,6 +142,9 @@ public class WebSparqlResultset implements ResultSet{
     private JSONObject getJSONObjectValue(String label ) throws SQLException{
         if( !labels.contains(label) ) return null;                 
         JSONObject row = bindings.getJSONObject(index);                
+        if(!row.has(label)){
+            return null;
+        }
         JSONObject column = row.getJSONObject(label);
         return column;
     }
@@ -130,6 +153,7 @@ public class WebSparqlResultset implements ResultSet{
     @Override
     public Object getObject(String columnLabel) throws SQLException {                
         JSONObject obj = getJSONObjectValue(columnLabel);
+        if( obj == null ) return null;
         String type = obj.getString("type");
         // System.out.println( "TYPE "+ type );
         if( type.equals("literal") ){

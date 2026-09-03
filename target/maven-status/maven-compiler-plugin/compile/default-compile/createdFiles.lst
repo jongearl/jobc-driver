@@ -1,5 +1,6 @@
 com\frotoma\jobc\builder\PrepareQueryBuilder.class
 com\frotoma\jobc\JobcDriver.class
+com\frotoma\jobc\LiteralUtil.class
 com\frotoma\jobc\fuseki\FusekiSparqlConnection.class
 com\frotoma\jobc\web\WebSparqlResultset.class
 com\frotoma\jobc\fuseki\FusekiSparqlDriver.class
@@ -19,6 +20,7 @@ com\frotoma\jobc\rest\AbstractAPIService.class
 com\frotoma\jobc\JobcDriverException.class
 com\frotoma\jobc\virt\VirtuosoStatement.class
 com\frotoma\jobc\web\WebSparqlPreparedStatement.class
+com\frotoma\jobc\LiteralUtil$LiteralParts.class
 com\frotoma\jobc\virt\VirtuosoPreparedStatement.class
 com\frotoma\jobc\fuseki\FusekiSparqlPreparedStatement.class
 com\frotoma\jobc\virt\VirtuosoConnection4pstmt.class
