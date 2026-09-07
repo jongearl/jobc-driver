@@ -1,26 +1,3 @@
-/*
-MIT License
-
-Copyright (c) 2026 jongearl
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
- */
 package com.frotoma.jobc.virt;
 
 import java.sql.Connection;
@@ -30,12 +7,13 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
-import java.util.logging.Logger;
-import org.apache.logging.log4j.LogManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VirtuosoSparqlDriver implements java.sql.Driver {
     
-    private org.apache.logging.log4j.Logger logger = LogManager.getLogger(VirtuosoSparqlDriver.class);
+    private Logger logger = LoggerFactory.getLogger(VirtuosoSparqlDriver.class);
 
     // URL 스킴
     private static final String JOBC_PREFIX = "jobc:virtuoso:";
@@ -116,8 +94,9 @@ public class VirtuosoSparqlDriver implements java.sql.Driver {
     }
 
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return null;
+    public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        // 데이터소스 클래스 또는 패키지 명칭으로 JUL Logger를 생성하여 반환합니다.
+        return java.util.logging.Logger.getLogger(VirtuosoSparqlDriver.class.getName());
     }
 
 }

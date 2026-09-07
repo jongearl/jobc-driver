@@ -1,5 +1,9 @@
-2026-08-27 11:10:09.198 [INFO ] [main] [c.f.t.WebDriverTest:303] - 시작
-2026-08-27 11:10:09.786 [DEBUG] [main] [c.f.j.r.APIMangerService:144] - GET SPARQL : PREFIX : <http:exmaple.org> SELECT *  WHERE {  graph <http://localhost:8890/DAV>  {  ?i a <http://xmlns.com/foaf/0.1/Agent> }} 
-2026-08-27 11:10:09.787 [DEBUG] [main] [c.f.j.r.APIMangerService:145] - GET URL : http://localhost:3030/jobc/sparql?query=PREFIX+%3A+%3Chttp%3Aexmaple.org%3E+SELECT+*++WHERE+%7B++graph+%3Chttp%3A%2F%2Flocalhost%3A8890%2FDAV%3E++%7B++%3Fi+a+%3Chttp%3A%2F%2Fxmlns.com%2Ffoaf%2F0.1%2FAgent%3E+%7D%7D+
-2026-08-27 11:10:09.787 [DEBUG] [main] [c.f.j.r.APIMangerService:146] - GET PARAM : {query=PREFIX : <http:exmaple.org> SELECT *  WHERE {  graph <http://localhost:8890/DAV>  {  ?i a <http://xmlns.com/foaf/0.1/Agent> }} }
-2026-08-27 11:10:09.791 [DEBUG] [main] [c.f.j.r.APIMangerService:161] - GET AUTH : admin / PASSWORD 
+2026-09-07 11:31:06.268 [INFO ] [main] [c.f.t.WebDriverTest:71] - 시작
+2026-09-07 11:31:06.534 [DEBUG] [main] [c.f.j.r.APIMangerService:144] - GET SPARQL : PREFIX : <http:exmaple.org> SELECT *  WHERE {  ?s ?p ?o .  }  LIMIT 10
+2026-09-07 11:31:06.534 [DEBUG] [main] [c.f.j.r.APIMangerService:145] - GET URL : http://localhost:3030/jobc/sparql?query=PREFIX+%3A+%3Chttp%3Aexmaple.org%3E+SELECT+*+%0AWHERE+%7B+%0A%3Fs+%3Fp+%3Fo+.+%0A%7D%0A+LIMIT+10
+2026-09-07 11:31:06.534 [DEBUG] [main] [c.f.j.r.APIMangerService:146] - GET PARAM : {query=PREFIX : <http:exmaple.org> SELECT * 
+WHERE { 
+?s ?p ?o . 
+}
+ LIMIT 10}
+2026-09-07 11:31:06.541 [DEBUG] [main] [c.f.j.r.APIMangerService:161] - GET AUTH : admin / PASSWORD 

@@ -1,6 +1,7 @@
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\onto\sparql\PareparedUpdateSparqlTest.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\test\FusekiTest.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\test\WebDriverTest.java
+d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\test\testRDF12.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\onto\pool\OriginalVirtDataSourceFactory.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\onto\pool\TestDrop.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\test\java\com\frotoma\virt\test\VirtuosoPstmtTest.java

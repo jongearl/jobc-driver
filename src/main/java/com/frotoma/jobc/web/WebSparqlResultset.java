@@ -1,31 +1,9 @@
-/*
-MIT License
-
-Copyright (c) 2026 jongearl
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
- */
 package com.frotoma.jobc.web;
 
+import com.frotoma.jobc.obj.BNodeObj;
 import com.frotoma.jobc.obj.LiteralObj;
 import com.frotoma.jobc.obj.ResourceObj;
-import com.google.gson.JsonArray;
+import com.frotoma.jobc.obj.TripleObj;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -164,6 +142,27 @@ public class WebSparqlResultset implements ResultSet{
             String uri = obj.getString("value");
             ResourceObj resource = new ResourceObj(uri);
             return resource;
+        }else if( type.equals("bnode") ){
+            String bnodeString = obj.getString("value");
+            BNodeObj bnode = new BNodeObj(bnodeString);
+            return bnode;
+        }else if( type.equals("triple")){
+            TripleObj triple = null;
+            JSONObject tripleObj = obj.getJSONObject("value");
+
+            ResourceObj subject = new ResourceObj( tripleObj.getJSONObject("subject").getString("value") );
+            ResourceObj predicate = new ResourceObj( tripleObj.getJSONObject("predicate").getString("value") );
+
+            JSONObject objectObj = tripleObj.getJSONObject("object");
+            
+            if( objectObj.getString("type").equals("uri") ){
+                ResourceObj resourceObject = new ResourceObj( objectObj.getString("value") );
+                triple = new TripleObj(subject, predicate, resourceObject);
+            } else if( objectObj.getString("type").equals("literal") ){
+                LiteralObj literalObject = new LiteralObj( objectObj.getString("value") );
+                triple = new TripleObj(subject, predicate, literalObject);
+            }            
+            return triple;
         }
         return obj.get("value");
     }

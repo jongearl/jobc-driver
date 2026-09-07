@@ -1,53 +1,26 @@
-/*
-MIT License
-
-Copyright (c) 2026 jongearl
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
- */
 package com.frotoma.jobc.virt;
 
-import com.frotoma.jobc.builder.LogBuilder;
-import com.frotoma.jobc.builder.PrepareSparqlBuilder;
 import com.frotoma.jobc.builder.VirtuosoPreparedSparqlBuilder;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import org.apache.jena.irix.IRIx;
 import org.apache.jena.rdf.model.Literal;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * TODO : Virtuoso Preparedstatement
  */
 public class VirtuosoPreparedStatement4psmt implements PreparedStatement {
 
-    private Logger logger = LogManager.getLogger(VirtuosoPreparedStatement4psmt.class);
+    private Logger logger = LoggerFactory.getLogger(VirtuosoPreparedStatement4psmt.class);
 
     // 수정부분
     private final Connection conn;

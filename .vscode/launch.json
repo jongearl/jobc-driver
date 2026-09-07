@@ -6,6 +6,34 @@
     "configurations": [
         {
             "type": "java",
+            "name": "WebDriverTest",
+            "request": "launch",
+            "mainClass": "com.frotoma.test.WebDriverTest",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
+            "name": "VirtuosoTest",
+            "request": "launch",
+            "mainClass": "com.frotoma.test.VirtuosoTest",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
+            "name": "JenaSparqlParam",
+            "request": "launch",
+            "mainClass": "com.frotoma.onto.sparql.JenaSparqlParam",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
+            "name": "testRDF12",
+            "request": "launch",
+            "mainClass": "com.frotoma.test.testRDF12",
+            "projectName": "jobc_driver"
+        },
+        {
+            "type": "java",
             "name": "PareparedSparqlTest",
             "request": "launch",
             "mainClass": "com.frotoma.onto.sparql.PareparedSparqlTest",

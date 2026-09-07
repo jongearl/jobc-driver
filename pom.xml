@@ -59,7 +59,13 @@ Features
       <artifactId>httpclient</artifactId>
       <version>4.5.13</version>
     </dependency>    
-                  
+
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.5.3</version>
+    </dependency>
+    <!--
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -80,6 +86,8 @@ Features
         <artifactId>log4j-slf4j-impl</artifactId>
         <version>2.24.1</version>
     </dependency>
+    -->
+
     <!-- virtuoso -->
     <dependency>
         <groupId>unofficial.com.openlink</groupId>

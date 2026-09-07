@@ -1,8 +1,10 @@
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\fuseki\FusekiSparqlConnection.java
+d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\obj\TripleObj.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\JobcDriver.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\LiteralUtil.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\virt\VirtuosoPreparedStatement.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\builder\ParamBuilder.java
+d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\obj\BNodeObj.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\virt\VirtuosoConnection4pstmt.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\web\WebSparqlResultset.java
 d:\work\pro-onto\sparql_jdbc\jobc_driver\src\main\java\com\frotoma\jobc\web\WebSparqlResultSetMetaData.java

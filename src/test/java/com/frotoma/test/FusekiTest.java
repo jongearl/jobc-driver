@@ -104,6 +104,9 @@ public class FusekiTest {
             e.printStackTrace();
         }        
     }
+
+
+    
     
     
     public void selectAllAgent_pstmt()
@@ -307,9 +310,11 @@ public class FusekiTest {
         // m.updateAgent0Name();
         // m.updateAgent10_pstmt();
         //m.updateAgent0Rel_pstmt();
-        //m.selectAllAgent();
-         m.selectAllAgent_pstmt();        
+        m.selectAllAgent();
+         //m.selectAllAgent_pstmt();        
         // m.deleteAgent1_pstmt();
         //m.DropTest();
+
+        
     }
 }

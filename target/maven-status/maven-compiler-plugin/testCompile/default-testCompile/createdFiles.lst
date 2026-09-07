@@ -10,6 +10,7 @@ com\frotoma\onto\pool\VirtTest.class
 com\frotoma\onto\sparql\JenaSparqlParam.class
 com\frotoma\onto\sparql\PareparedSparqlTest.class
 com\frotoma\onto\pool\TestDrop.class
+com\frotoma\test\testRDF12.class
 com\frotoma\test\WebDriverTest.class
 com\frotoma\onto\pool\HikariDataSourceFactory2.class
 com\frotoma\test\FusekiTest.class
