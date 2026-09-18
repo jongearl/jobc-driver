@@ -20,8 +20,6 @@ public class PrepareSparqlBuilder {
         
         String sparql = sql + " ";
         pss.setCommandText(sparql);
-        
-        System.out.println("|"+sparql+"|");
     }
     
     public void addParameter( int idx , URL obj){        

@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public class VirtuosoTest {
         
     private static final String DRIVER = "com.frotoma.jobc.JobcDriver";
-    private static final String URL = "jobc:virtuoso://localhost:1111/CHARSET=UTF-8";
+    private static final String URL = "jobc:virtuoso://192.168.10.4:1111/CHARSET=UTF-8";
     private static final String USER ="dba";
     private static final String PASSWORD ="dba";
     

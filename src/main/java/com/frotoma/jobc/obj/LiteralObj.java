@@ -16,57 +16,93 @@ public class LiteralObj {
     // private String valueString = null;
     
 
+    /**
+     * Turtle 스타일로 직렬화된 문자열( "값"@lang / "값"^^datatype )을 파싱해서 생성한다.
+     * @param valueString Turtle 스타일 리터럴 문자열
+     */
     public LiteralObj (String valueString){
         LiteralParts parts = LiteralUtil.parseLiteral(valueString);
-        //LiteralParts parts = parseLiteral(valueString);
         if( parts != null ){
-            String value = parts.getValue();
-            String lang = parts.getLang();
-            String datatype = parts.getDatatype();
-
-            this.lang = lang;
-            this.datatype = datatype;
-
-            if( datatype == null ){
-                this.value = value;
-            }else if( datatype.equals("xsd:string") ){
-                this.value = value;
-            }else if( datatype.equalsIgnoreCase("xsd:integer")){
-                this.value = Integer.parseInt(value);            
-            }else if( datatype.equalsIgnoreCase("xsd:double")){
-                this.value = Double.parseDouble(value);
-            }else if( datatype.equalsIgnoreCase("xsd:float")){
-                this.value = Float.parseFloat(value);
-            }else if( datatype.equalsIgnoreCase("xsd:long")){
-                this.value = Long.parseLong(value);    
-            }else if( datatype.equalsIgnoreCase("xsd:boolean")){
-                this.value = Boolean.parseBoolean(value);    
-            }else if( datatype.equalsIgnoreCase("xsd:short")){
-                this.value = Short.parseShort(value);        
-            }else if( datatype.equalsIgnoreCase("xsd:byte")){
-                this.value = Byte.parseByte(value);            
-            }else if( datatype.equalsIgnoreCase("xsd:decimal")){
-                this.value = new BigDecimal(value);
-            }else if( datatype.equalsIgnoreCase("xsd:gDay")){
-                this.value = Integer.parseInt(value);    
-            }else if( datatype.equalsIgnoreCase("xsd:gMonth")){
-                this.value = Integer.parseInt(value);    
-            }else if( datatype.equalsIgnoreCase("xsd:gMonthDay")){
-                this.value = Integer.parseInt(value);    
-            }else if( datatype.equalsIgnoreCase("xsd:gYear")){
-                this.value = Integer.parseInt(value);                
-            }else if( datatype.equalsIgnoreCase("xsd:gYearMonth")){
-                this.value = Integer.parseInt(value);                    
-            }else if( datatype.equalsIgnoreCase("xsd:QName")){
-                this.value = value;
-            }else if( datatype.equalsIgnoreCase("xsd:anyURI")){
-                this.value = value;    
-            }else{
-                this.value = value;
-            }
+            init(parts.getValue(), parts.getLang(), parts.getDatatype());
         }else{
             this.value = valueString;
         }
+    }
+
+    /**
+     * SPARQL 1.1 JSON Results 바인딩("value", "xml:lang", "datatype")으로부터 직접 생성한다.
+     * @param value 리터럴 값
+     * @param lang 언어 태그 (없으면 null)
+     * @param datatype 데이터타입 URI 또는 xsd: 접두 표기 (없으면 null)
+     */
+    public LiteralObj (String value, String lang, String datatype){
+        init(value, lang, datatype);
+    }
+
+    private void init(String value, String lang, String datatype){
+        this.lang = lang;
+        this.datatype = datatype;
+
+        String localType = localName(datatype);
+
+        if( localType == null ){
+            this.value = value;
+        }else if( localType.equalsIgnoreCase("string") ){
+            this.value = value;
+        }else if( localType.equalsIgnoreCase("integer")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("double")){
+            this.value = Double.parseDouble(value);
+        }else if( localType.equalsIgnoreCase("float")){
+            this.value = Float.parseFloat(value);
+        }else if( localType.equalsIgnoreCase("long")){
+            this.value = Long.parseLong(value);
+        }else if( localType.equalsIgnoreCase("boolean")){
+            this.value = Boolean.parseBoolean(value);
+        }else if( localType.equalsIgnoreCase("short")){
+            this.value = Short.parseShort(value);
+        }else if( localType.equalsIgnoreCase("byte")){
+            this.value = Byte.parseByte(value);
+        }else if( localType.equalsIgnoreCase("decimal")){
+            this.value = new BigDecimal(value);
+        }else if( localType.equalsIgnoreCase("gDay")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("gMonth")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("gMonthDay")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("gYear")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("gYearMonth")){
+            this.value = Integer.parseInt(value);
+        }else if( localType.equalsIgnoreCase("QName")){
+            this.value = value;
+        }else if( localType.equalsIgnoreCase("anyURI")){
+            this.value = value;
+        }else{
+            this.value = value;
+        }
+    }
+
+    /**
+     * "xsd:integer" 같은 접두 표기와 전체 URI("http://www.w3.org/2001/XMLSchema#integer") 표기
+     * 모두에서 로컬 타입 이름("integer")만 뽑아낸다.
+     * @param datatype xsd 접두 표기 또는 전체 URI (null 가능)
+     * @return 로컬 타입 이름, datatype이 null이면 null
+     */
+    private static String localName(String datatype){
+        if( datatype == null ){
+            return null;
+        }
+        int hashIdx = datatype.lastIndexOf('#');
+        if( hashIdx >= 0 ){
+            return datatype.substring(hashIdx + 1);
+        }
+        int colonIdx = datatype.lastIndexOf(':');
+        if( colonIdx >= 0 ){
+            return datatype.substring(colonIdx + 1);
+        }
+        return datatype;
     }
 
     public String getDatatype() {

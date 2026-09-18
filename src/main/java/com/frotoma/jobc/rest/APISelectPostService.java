@@ -43,7 +43,7 @@ public class APISelectPostService extends AbstractAPIService{
         logger.debug( "POST SPARQL : " + LogBuilder.generateOneline( param.get("query") ) );
         logger.debug( "POST URL : " + url );
         logger.debug( "POST PARAM : " + param );
-        
+       
         String resultJson = null;
         HttpPost httpPost = new HttpPost( url  );
         

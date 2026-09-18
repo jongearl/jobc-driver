@@ -1,6 +1,8 @@
 package com.frotoma.jobc.rest;
 
 import com.frotoma.jobc.JobcDriverException;
+import com.frotoma.jobc.builder.LogBuilder;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,10 +42,13 @@ public class APIUpdatePostFusekiService extends APISelectPostService{
 
     public String api(String urlString, Map<String, String> param, Properties info) throws JobcDriverException{
         
-        logger.info( "POST UPDATE SPARQL : " + param.get("update"));
         // 전송방식 HttpGet, HttpPost방식
         String resultJson = null;
         HttpPost httpPost = new HttpPost( urlString );
+
+        logger.debug( "UPDATE SPARQL : " + LogBuilder.generateOneline( param.get("query") ) );
+        logger.debug( "UPDATE URL : " + urlString );
+        logger.debug( "UPDATE PARAM : " + param );
         
         // 일반 SQL은 select만 가능
         httpPost.setHeader("ACCEPT", ACCEPT_SPARQL_UPDATE);
@@ -72,8 +77,6 @@ public class APIUpdatePostFusekiService extends APISelectPostService{
                 ub.addParameter(key,value);                
             }            
             uri = ub.build();
-
-            logger.info( "POST : "+ uri );
 
             httpPost.setURI(uri);
 

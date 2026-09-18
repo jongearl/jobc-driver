@@ -136,7 +136,9 @@ public class WebSparqlResultset implements ResultSet{
         // System.out.println( "TYPE "+ type );
         if( type.equals("literal") ){
             String value = obj.getString("value");
-            LiteralObj data = new LiteralObj(value);
+            String lang = obj.has("xml:lang") ? obj.getString("xml:lang") : null;
+            String datatype = obj.has("datatype") ? obj.getString("datatype") : null;
+            LiteralObj data = new LiteralObj(value, lang, datatype);
             return data;
         }else if( type.equals("uri") ){
             String uri = obj.getString("value");
@@ -159,9 +161,11 @@ public class WebSparqlResultset implements ResultSet{
                 ResourceObj resourceObject = new ResourceObj( objectObj.getString("value") );
                 triple = new TripleObj(subject, predicate, resourceObject);
             } else if( objectObj.getString("type").equals("literal") ){
-                LiteralObj literalObject = new LiteralObj( objectObj.getString("value") );
+                String literalLang = objectObj.has("xml:lang") ? objectObj.getString("xml:lang") : null;
+                String literalDatatype = objectObj.has("datatype") ? objectObj.getString("datatype") : null;
+                LiteralObj literalObject = new LiteralObj( objectObj.getString("value"), literalLang, literalDatatype );
                 triple = new TripleObj(subject, predicate, literalObject);
-            }            
+            }
             return triple;
         }
         return obj.get("value");

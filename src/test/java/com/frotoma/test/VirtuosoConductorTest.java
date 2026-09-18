@@ -16,11 +16,11 @@ import org.slf4j.LoggerFactory;
  */
 public class VirtuosoConductorTest {
     
-    private static final String DRIVER = "com.frotoma.JobcDriver";
-    private static final String URL = "jobc:web:http://localhost:8890/sparql/CHARSET=UTF-8";
+    private static final String DRIVER = "com.frotoma.jobc.JobcDriver";
+    private static final String URL = "jobc:virtuoso://192.168.10.4:1111/CHARSET=UTF-8";
     String user ="dba";
     String password ="dba";
-        
+
     public void selectTrue()
     {
         try {

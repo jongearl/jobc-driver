@@ -26,6 +26,8 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         Map<String, String> param = new HashMap<String, String>();
         param.put("query", sql);
         String result = null;
+
+        logger.debug( "SPARQL : " + sql );
         
         if( getSparqlConnection().getValue("method") == null || getSparqlConnection().getValue("method").equals("get")){
             // GET
