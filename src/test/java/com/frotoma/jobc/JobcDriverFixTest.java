@@ -93,9 +93,9 @@ public class JobcDriverFixTest {
 
     @Test
     public void literalThatCannotBeConvertedStaysString() {
-        LiteralObj l = new LiteralObj("2026-05", null, XSD + "gYearMonth");
-        assertEquals("2026-05", l.getValue());
-        assertEquals("2026-05", l.getLexicalForm());
+        LiteralObj l = new LiteralObj("abc", null, XSD + "integer");
+        assertEquals("abc", l.getValue());
+        assertEquals("abc", l.getLexicalForm());
     }
 
     @Test

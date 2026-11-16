@@ -2,6 +2,9 @@ package com.frotoma.jobc.obj;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.MonthDay;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 
 import com.frotoma.jobc.LiteralUtil;
 import com.frotoma.jobc.LiteralUtil.LiteralParts;
@@ -48,7 +51,7 @@ public class LiteralObj {
         this.lexicalForm = value;
         try {
             this.value = convert(value, localName(datatype));
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
             // Java 값으로 바꿀 수 없는 형식("2026-05"^^xsd:gYearMonth 등)은 문자열 그대로 둔다
             this.value = value;
         }
@@ -79,18 +82,39 @@ public class LiteralObj {
             return Byte.parseByte(value);
         }else if( localType.equalsIgnoreCase("decimal")){
             return new BigDecimal(value);
-        }else if( localType.equalsIgnoreCase("gDay")){
-            return Integer.parseInt(value);
-        }else if( localType.equalsIgnoreCase("gMonth")){
-            return Integer.parseInt(value);
-        }else if( localType.equalsIgnoreCase("gMonthDay")){
-            return Integer.parseInt(value);
-        }else if( localType.equalsIgnoreCase("gYear")){
-            return Integer.parseInt(value);
-        }else if( localType.equalsIgnoreCase("gYearMonth")){
-            return Integer.parseInt(value);
+        }else if( localType.equals("gDay")){            // ---DD
+            return Integer.parseInt(stripTimezone(value).substring(3));
+        }else if( localType.equals("gMonth")){          // --MM
+            return Integer.parseInt(stripTimezone(value).substring(2));
+        }else if( localType.equals("gMonthDay")){       // --MM-DD
+            return parseOrNumberFormat(() -> MonthDay.parse(stripTimezone(value)));
+        }else if( localType.equals("gYear")){           // YYYY
+            return Integer.parseInt(stripTimezone(value));
+        }else if( localType.equals("gYearMonth")){      // YYYY-MM
+            return parseOrNumberFormat(() -> YearMonth.parse(stripTimezone(value)));
         }else{
             return value;
+        }
+    }
+
+    /** g* 타입 값 끝의 타임존("Z", "+09:00", "-05:00")을 뗀다. 원래 값은 lexicalForm 에 남는다. */
+    private static String stripTimezone(String value){
+        if( value.endsWith("Z") ){
+            return value.substring(0, value.length() - 1);
+        }
+        int len = value.length();
+        if( len >= 6 && (value.charAt(len - 6) == '+' || value.charAt(len - 6) == '-') && value.charAt(len - 3) == ':' ){
+            return value.substring(0, len - 6);
+        }
+        return value;
+    }
+
+    /** java.time 파싱 실패를 NumberFormatException 으로 바꿔, 문자열 그대로 두는 기존 경로를 탄다 */
+    private static Object parseOrNumberFormat(java.util.function.Supplier<Object> parser){
+        try {
+            return parser.get();
+        } catch (DateTimeParseException e) {
+            throw new NumberFormatException(e.getMessage());
         }
     }
 
@@ -145,10 +169,11 @@ public class LiteralObj {
     }
 
     public String toString(){
-        StringBuffer sb = new StringBuffer();
-        sb.append("\"").append( value.toString().replaceAll("\"", "\\\"") ).append("\"");
+        String lexical = lexicalForm != null ? lexicalForm : String.valueOf(value);
+        StringBuilder sb = new StringBuilder();
+        sb.append("\"").append( lexical.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") ).append("\"");
         if( datatype != null ){
-            sb.append("^^").append(datatype);
+            sb.append("^^").append( datatype.contains("://") ? "<" + datatype + ">" : datatype );
         }else if( lang != null) {
             sb.append("@").append(lang);
         }

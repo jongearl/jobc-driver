@@ -15,7 +15,7 @@ import org.apache.jena.rdf.model.Resource;
  */
 public class JenaSparqlParam {
     
-    public static void main(String[] args){
+    public static void main(String[] args) throws Exception {
         String input = "\"val\" }; DROP GRAPH <> {all";
         ParameterizedSparqlString pss = new ParameterizedSparqlString();
         pss.setCommandText("SELECT * WHERE { ?s ?p ?value }");
@@ -32,7 +32,7 @@ public class JenaSparqlParam {
         
         PrepareSparqlBuilder builder = new PrepareSparqlBuilder(sparql);        
         URL url = ParamBuilder.createURL("http://www.mofa.go.kr");
-        builder.addParameter(0, url);
+        builder.addParameter(1, url);   // 파라미터 위치는 1부터
         
         
         

@@ -142,8 +142,8 @@ public class WebSparqlStatement implements Statement{
         while( rs.next() ){
             Object obj = rs.getObject(1);
             if( obj instanceof LiteralObj ){
-                LiteralObj data = (LiteralObj)obj;
-                updateCount = (Integer)data.getValue();
+                Object value = ((LiteralObj)obj).getValue();
+                updateCount = ( value instanceof Number ) ? ((Number) value).intValue() : Integer.parseInt(value.toString().trim());
             }else if( obj instanceof String ){                
                 updateCount = Integer.parseInt(obj.toString());
             }

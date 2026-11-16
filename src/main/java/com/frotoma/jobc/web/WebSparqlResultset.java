@@ -182,8 +182,12 @@ public class WebSparqlResultset implements ResultSet{
     //     return getObjectValue( getLabelByIndex(columnIndex) );        
     // }
 
+    /** 마지막으로 읽은 값이 바인딩되지 않았는지 (JDBC wasNull) */
+    private boolean lastWasNull = false;
+
     private Object getObjectValue(String columnName) throws SQLException {
         Object obj = getObject(columnName);
+        lastWasNull = ( obj == null );
         if( obj instanceof LiteralObj ){
             return ( (LiteralObj)obj ).getValue();
         }else if( obj instanceof URL ){
@@ -220,8 +224,43 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public boolean wasNull() throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return lastWasNull;
+    }
+
+    /** 숫자형 getter 공통: 값을 BigDecimal 로. 바인딩되지 않았으면 null. 숫자가 아니면 SQLState 22018 */
+    private BigDecimal numberValue(String columnLabel) throws SQLException {
+        Object obj = getObjectValue(columnLabel);
+        if( obj == null ){
+            return null;
+        }
+        if( obj instanceof BigDecimal ){
+            return (BigDecimal) obj;
+        }
+        if( obj instanceof Boolean ){
+            return ((Boolean) obj) ? BigDecimal.ONE : BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(obj.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new SQLException("'" + obj + "' is not a number (column " + columnLabel + ")", "22018", e);
+        }
+    }
+
+    /** 정수형 getter 공통: 소수점 아래는 버리고, 범위를 넘으면 SQLState 22003 */
+    private long integralValue(String columnLabel, long min, long max) throws SQLException {
+        BigDecimal bd = numberValue(columnLabel);
+        if( bd == null ){
+            return 0;
+        }
+        try {
+            long v = bd.setScale(0, java.math.RoundingMode.DOWN).longValueExact();
+            if( v < min || v > max ){
+                throw new ArithmeticException();
+            }
+            return v;
+        } catch (ArithmeticException e) {
+            throw new SQLException("'" + bd + "' is out of range (column " + columnLabel + ")", "22003");
+        }
     }
 
     @Override
@@ -232,10 +271,7 @@ public class WebSparqlResultset implements ResultSet{
     @Override
     public String getString(String columnLabel) throws SQLException {
         Object obj = getObjectValue(columnLabel);
-        if(obj instanceof String ){
-            return obj.toString();
-        }
-        return obj.toString();
+        return obj == null ? null : obj.toString();
         // throw new SQLException("'"+obj+"'는 문자열이 아닙니다.");
     }
 
@@ -247,10 +283,14 @@ public class WebSparqlResultset implements ResultSet{
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
         Object obj = getObjectValue(columnLabel);
+        if( obj == null ){
+            return false;
+        }
         if(obj instanceof Boolean ){
             return (Boolean)obj;
         }
-        return Boolean.parseBoolean(obj.toString());
+        String s = obj.toString().trim();
+        return s.equalsIgnoreCase("true") || s.equals("1");
         //throw new SQLException("'"+obj+"'는 Boolean이 아닙니다.");
     }
 
@@ -262,11 +302,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {        
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Byte ){
-            return (Byte)obj;
-        }
-        return Byte.parseByte(obj.toString());
+        return (byte) integralValue(columnLabel, Byte.MIN_VALUE, Byte.MAX_VALUE);
     }
 
     @Override
@@ -276,11 +312,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Short ){
-            return (Short)obj;
-        }
-        return Short.parseShort(obj.toString());        
+        return (short) integralValue(columnLabel, Short.MIN_VALUE, Short.MAX_VALUE);
     }
 
     @Override
@@ -290,11 +322,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public int getInt(String columnLabel) throws SQLException {        
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Integer ){
-            return (Integer)obj;
-        }
-        return Integer.parseInt(obj.toString());        
+        return (int) integralValue(columnLabel, Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     @Override
@@ -304,11 +332,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Long ){
-            return (Long)obj;
-        }
-        return Long.parseLong(obj.toString());
+        return integralValue(columnLabel, Long.MIN_VALUE, Long.MAX_VALUE);
         // throw new SQLException("'"+obj+"'는 Long이 아닙니다.");
     }
 
@@ -319,11 +343,8 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Float ){
-            return (Float)obj;
-        }
-        return Float.parseFloat(obj.toString());
+        BigDecimal bd = numberValue(columnLabel);
+        return bd == null ? 0f : bd.floatValue();
         // throw new SQLException("'"+obj+"'는 Float이 아닙니다.");
     }
 
@@ -336,11 +357,8 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Double ){
-            return (Double)obj;
-        }
-        return Double.parseDouble(obj.toString());
+        BigDecimal bd = numberValue(columnLabel);
+        return bd == null ? 0d : bd.doubleValue();
         //throw new SQLException("'"+obj+"'는 Double이 아닙니다.");
     }
 
@@ -361,11 +379,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof BigDecimal ){
-            return (BigDecimal)obj;
-        }        
-        return new BigDecimal(obj.toString());
+        return numberValue(columnLabel);
         // throw new SQLException("'"+obj+"'는 BigDecimal이 아닙니다.");
     }
 
