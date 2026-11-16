@@ -85,6 +85,42 @@ public class VirtuosoWrapperFixTest {
         assertFalse(executed.get(0), executed.get(0).contains("abc"));
     }
 
+    /** PreparedStatement 의 문자열 실행 메서드도 SPARQL 접두어를 붙여야 한다 (없으면 Virtuoso 가 SQL 로 실행) */
+    @Test
+    public void preparedStringExecuteMethodsAddSparqlPrefix() throws Exception {
+        PreparedStatement ps = conn.prepareStatement(SELECT);
+        String q = "SELECT * WHERE {?s ?p ?o}";
+        ps.executeQuery(q);
+        ps.executeUpdate(q);
+        ps.execute(q);
+        ps.executeUpdate(q, Statement.NO_GENERATED_KEYS);
+        ps.executeUpdate(q, new int[] { 1 });
+        ps.executeUpdate(q, new String[] { "s" });
+        ps.execute(q, Statement.NO_GENERATED_KEYS);
+        ps.execute(q, new int[] { 1 });
+        ps.execute(q, new String[] { "s" });
+        assertEquals(9, executed.size());
+        for (String sql : executed) {
+            assertTrue(sql, sql.startsWith("SPARQL "));
+        }
+    }
+
+    @Test
+    public void preparedAddBatchStringAddsSparqlPrefix() throws Exception {
+        List<String> batched = new ArrayList<>();
+        Statement fake = (Statement) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Statement.class },
+                (proxy, method, args) -> {
+                    if (method.getName().equals("addBatch")) batched.add((String) args[0]);
+                    Class<?> rt = method.getReturnType();
+                    if (rt == boolean.class) return false;
+                    if (rt == int.class) return 0;
+                    return null;
+                });
+        PreparedStatement ps = new VirtuosoPreparedStatement(fake, SELECT);
+        ps.addBatch("INSERT DATA { <urn:a> <urn:b> 1 }");
+        assertTrue(batched.get(0), batched.get(0).startsWith("SPARQL "));
+    }
+
     @Test
     public void setNullThrows() throws Exception {
         PreparedStatement ps = conn.prepareStatement(SELECT);
