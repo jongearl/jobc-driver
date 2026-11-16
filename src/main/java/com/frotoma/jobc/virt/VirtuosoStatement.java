@@ -30,7 +30,7 @@ public class VirtuosoStatement implements Statement{
      */
     private String convert(String sql){
         String result = "SPARQL " + sql;
-        logger.info("[Virtuoso] 실행 SQL: " + result);
+        logger.debug("[Virtuoso] 실행 SQL: {}", result);
         return result;
     }
 

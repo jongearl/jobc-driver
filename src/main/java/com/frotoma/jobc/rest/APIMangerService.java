@@ -1,6 +1,7 @@
 package com.frotoma.jobc.rest;
 
 import com.frotoma.jobc.JobcDriverException;
+import com.frotoma.jobc.LogMasker;
 import com.frotoma.jobc.builder.LogBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -11,7 +12,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
@@ -50,7 +50,6 @@ public class APIMangerService {
     
     private String user;
     
-    private String password;
 
     public APIMangerService(String url, Properties info){
         
@@ -86,21 +85,20 @@ public class APIMangerService {
     }
     
     private void init(Properties info){
-        
+
         this.user = info.getProperty("user");
-        this.password = info.getProperty("password");
+
         this.info = info;
+        if( url != null && url.toLowerCase().startsWith("http://") && user != null ){
+            logger.warn("Basic auth over plain HTTP: credentials are sent unencrypted to {}", LogMasker.maskUrl(url));
+        }
     }
-    
-    public String getUser(){
-        return user;
-    }
-    
-    public String getPassword(){
-        return password;
-    }
-    
+
+    /** 접속 속성. 비밀번호는 밖으로 내주지 않는다. */
     public String getProperty(String key){
+        if( "password".equalsIgnoreCase(key) ){
+            return null;
+        }
         return this.info.getProperty(key);
     }
     
@@ -140,8 +138,6 @@ public class APIMangerService {
                 byte[] data1 = auth.getBytes(StandardCharsets.UTF_8);
                 String base64 = Base64.getEncoder().encodeToString(data1);                
                 httpGet.setHeader("Authorization", "Basic " + base64);
-                
-                logger.debug( "GET AUTH : " + username +" / PASSWORD " );
             }
 
             HttpResponse httpResponse = this.httpClient.execute(httpGet);
@@ -187,9 +183,7 @@ public class APIMangerService {
             byte[] data1 = auth.getBytes(StandardCharsets.UTF_8);
             base64 = Base64.getEncoder().encodeToString(data1);
             httpPost.addHeader("Authorization", "Basic " + base64);
-            
-            logger.debug( "POST AUTH : " + username +" / PASSWORD " );
-        }        
+        }
 
         try {
             // 파라미터는 URL 이 아니라 본문(form)으로 보낸다 (긴 SPARQL 의 URL 길이 제한 회피)
@@ -199,12 +193,6 @@ public class APIMangerService {
             }
             httpPost.setEntity(new UrlEncodedFormEntity(form, StandardCharsets.UTF_8));
 
-            logger.debug( "===================  POST Request HEADER ====================");
-            for( Header header : httpPost.getAllHeaders() ){
-                logger.debug( header.getName() +" : "+ header.getValue() );
-            }
-            logger.debug( "================================================");
-            
 
             HttpResponse httpResponse = httpClient.execute(httpPost);
 //            logger.debug( "===================  POST Response HEADER ====================");

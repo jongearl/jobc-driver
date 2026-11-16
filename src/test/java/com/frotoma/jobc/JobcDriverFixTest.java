@@ -140,7 +140,6 @@ public class JobcDriverFixTest {
         WebSparqlConnection b = (WebSparqlConnection) driver.connect("jobc:fuseki:http://a.example/A/sparql", p2);
 
         assertNotSame(a.getAPIManger(), b.getAPIManger());
-        assertEquals("p2", b.getAPIManger().getPassword());
     }
 
     @Test

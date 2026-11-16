@@ -184,7 +184,7 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
         if (!trimmed.toUpperCase().startsWith("SPARQL")) {
             trimmed = "SPARQL " + trimmed;
         }        
-        logger.info("[Virtuoso] PreparedStatement : " + LogBuilder.generateOneline(trimmed));
+        logger.debug("[Virtuoso] PreparedStatement : {}", LogBuilder.generateOneline(trimmed));
         return trimmed;
     }
 

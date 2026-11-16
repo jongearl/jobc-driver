@@ -38,7 +38,7 @@ public class VirtuosoSparqlDriver implements java.sql.Driver {
         }
 
         String convertedUrl = convertUrl(url);
-        logger.info("[VirtuosoSparqlDriver] Virtuoso Sever : " + convertedUrl);        
+        logger.debug("[VirtuosoSparqlDriver] Virtuoso Server : {}", com.frotoma.jobc.LogMasker.maskUrl(convertedUrl));        
 
         // 진짜 Virtuoso 드라이버에게 변환된 url전달하여 커넥션 획득
         //Connection original = originalVirtuosoDriver.connect(convertedUrl, info);
