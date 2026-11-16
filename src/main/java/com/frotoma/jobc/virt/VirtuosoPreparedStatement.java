@@ -180,12 +180,11 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
 
     private String convert(String sql) {
         if (sql == null) return null;
-        String trimmed = sql.trim();        
-        if (!trimmed.toUpperCase().startsWith("SPARQL")) {
-            trimmed = "SPARQL " + trimmed;
-        }        
-        logger.debug("[Virtuoso] PreparedStatement : {}", LogBuilder.generateOneline(trimmed));
-        return trimmed;
+        // 항상 붙인다. "SPARQL" 로 시작하는지만 보면 sparql_to_sql_text(...) 같은 SQL 이 접두어 없이 SQL 로 실행된다.
+        // 사용자는 SPARQL 접두어를 직접 붙이지 않는다 (붙이면 "SPARQL SPARQL ..." 로 문법 오류)
+        String converted = "SPARQL " + sql.trim();
+        logger.debug("[Virtuoso] PreparedStatement : {}", LogBuilder.generateOneline(converted));
+        return converted;
     }
 
     private String replaceParams(String sql) {

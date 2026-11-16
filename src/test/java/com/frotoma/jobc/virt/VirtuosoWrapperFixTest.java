@@ -105,6 +105,15 @@ public class VirtuosoWrapperFixTest {
         }
     }
 
+    /** 'sparql' 로 시작하는 SQL 식별자(예: sparql_to_sql_text)도 접두어가 붙어 SQL 로 실행되지 않아야 한다 */
+    @Test
+    public void sparqlIdentifierIsAlwaysPrefixed() throws Exception {
+        conn.prepareStatement(SELECT).executeQuery("sparql_to_sql_text('SELECT * WHERE {?s ?p ?o}')");
+        conn.prepareStatement("sparql_eval('x')").executeQuery();
+        assertTrue(executed.get(0), executed.get(0).startsWith("SPARQL sparql_to_sql_text("));
+        assertTrue(executed.get(1), executed.get(1).startsWith("SPARQL sparql_eval("));
+    }
+
     @Test
     public void preparedAddBatchStringAddsSparqlPrefix() throws Exception {
         List<String> batched = new ArrayList<>();
