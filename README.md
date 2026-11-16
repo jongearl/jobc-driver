@@ -72,7 +72,7 @@ Set as JDBC properties or appended to the URL as `&key=value` (URL values win; v
 - `ResultSet.getString` returns the literal exactly as the store sent it (`"007"^^xsd:integer` → `"007"`). `getObject(col, Class)` supports `java.time` types (MyBatis 3.5). `getTimestamp` reads `xsd:dateTime`.
 - Column index out of range → SQLState 07009; unknown column → 42S22; `findColumn` is 1-based.
 - A query response that is not SPARQL JSON (HTML, Turtle, XML) now throws instead of returning an empty ResultSet.
-- PreparedStatement: `?` directly before `)`, `}` or `,` is recognized (e.g. `FILTER(?x = ?)`). Executing with an unbound `?` throws SQLState 07001. `LiteralObj` parameters with an invalid language tag or datatype IRI are rejected.
+- PreparedStatement: `?` directly before `)`, `}` or `,` is recognized (e.g. `FILTER(?x = ?)`). Executing with an unbound `?` throws SQLState 07001. `LiteralObj` and Jena `Literal`/`Node`/`RDFNode` parameters with an invalid language tag, datatype IRI, IRI or variable name are rejected (SQLState 22018).
 - HTTP redirects are not followed (credentials would be forwarded to another host). `Connection.isValid()` returns false when the endpoint is unreachable.
 - In URL properties, encode `%` as `%25` and `+` as `%2B` (values are URL-decoded; an invalid `%` sequence fails with SQLState 08001).
 

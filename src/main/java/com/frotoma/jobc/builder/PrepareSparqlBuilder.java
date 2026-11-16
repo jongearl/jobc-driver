@@ -43,7 +43,17 @@ public class PrepareSparqlBuilder {
         if( obj == null ){
             throw new SQLException("SPARQL has no NULL value (parameter " + idx + ")", "22004");
         }
-        int i = idx - 1;
+        try {
+            bind(idx - 1, obj);
+        } catch (SQLException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // Jena 가 인젝션 위험 등으로 거부한 값 (ARQException 등)
+            throw new SQLException("Invalid value for parameter " + idx + ": " + e.getMessage(), "22018", e);
+        }
+    }
+
+    private void bind(int i, Object obj) throws SQLException {
         if( obj instanceof String ){
             pss.setLiteral(i, (String) obj);
         }else if( obj instanceof Boolean || obj instanceof Byte || obj instanceof Short || obj instanceof Integer
@@ -71,11 +81,13 @@ public class PrepareSparqlBuilder {
             pss.setLiteral(i, obj.toString(), XSDDatatype.XSDanyURI);
         }else if( obj instanceof IRIx ){
             pss.setIri(i, (IRIx) obj);
-        }else if( obj instanceof Literal ){
-            pss.setLiteral(i, (Literal) obj);
         }else if( obj instanceof RDFNode ){
-            pss.setParam(i, (RDFNode) obj);
+            // Literal 포함. Jena 는 언어 태그·데이터타입·변수 이름을 검사하지 않고 그대로 쓰므로 먼저 검사한다
+            Node node = ((RDFNode) obj).asNode();
+            checkNode(node);
+            pss.setParam(i, node);
         }else if( obj instanceof Node ){
+            checkNode((Node) obj);
             pss.setParam(i, (Node) obj);
         }else if( obj instanceof LiteralObj ){
             pss.setLiteral(i, toLiteral((LiteralObj) obj));
@@ -91,20 +103,58 @@ public class PrepareSparqlBuilder {
     private static final java.util.regex.Pattern LANG_TAG = java.util.regex.Pattern.compile("[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*");
     private static final java.util.regex.Pattern IRI_FORBIDDEN = java.util.regex.Pattern.compile("[\\s<>\"{}|^`\\\\]");
 
-    /** Jena 는 언어 태그·데이터타입 IRI 를 검사하지 않고 쿼리 문자열에 그대로 넣으므로 여기서 막는다 (인젝션 방지) */
+    private static final java.util.regex.Pattern VAR_NAME = java.util.regex.Pattern.compile("[\\p{L}\\p{N}_]+");
+
+    /**
+     * Jena 는 언어 태그·데이터타입 IRI·변수 이름을 검사하지 않고 쿼리 문자열에 그대로 넣으므로 여기서 막는다 (인젝션 방지).
+     * 리터럴의 값(lexical form)은 Jena 가 이스케이프하므로 검사하지 않는다.
+     */
+    static void checkNode(Node node) throws SQLException{
+        if( node.isLiteral() ){
+            String lang = node.getLiteralLanguage();
+            if( lang != null && !lang.isEmpty() ){
+                checkLang(lang);
+            }
+            String dt = node.getLiteralDatatypeURI();
+            if( dt != null ){
+                checkIri(dt, "datatype IRI");
+            }
+        }else if( node.isURI() ){
+            checkIri(node.getURI(), "IRI");
+        }else if( node.isVariable() ){
+            if( !VAR_NAME.matcher(node.getName()).matches() ){
+                throw new SQLException("Invalid variable name", "22018");
+            }
+        }else if( node.isTripleTerm() ){
+            org.apache.jena.graph.Triple t = node.getTriple();
+            checkNode(t.getSubject());
+            checkNode(t.getPredicate());
+            checkNode(t.getObject());
+        }
+        // 블랭크 노드는 Jena 가 라벨을 안전한 형태로 다시 쓴다
+    }
+
+    private static void checkLang(String lang) throws SQLException{
+        if( !LANG_TAG.matcher(lang).matches() ){
+            throw new SQLException("Invalid language tag", "22018");
+        }
+    }
+
+    private static void checkIri(String iri, String what) throws SQLException{
+        if( IRI_FORBIDDEN.matcher(iri).find() || iri.indexOf(':') < 1 ){
+            throw new SQLException("Invalid " + what, "22018");
+        }
+    }
+
     private static Literal toLiteral(LiteralObj l) throws SQLException{
         String lexical = l.getLexicalForm() != null ? l.getLexicalForm() : String.valueOf(l.getValue());
         if( l.getLang() != null ){
-            if( !LANG_TAG.matcher(l.getLang()).matches() ){
-                throw new SQLException("Invalid language tag", "22018");
-            }
+            checkLang(l.getLang());
             return ResourceFactory.createLangLiteral(lexical, l.getLang());
         }
         if( l.getDatatype() != null ){
             String iri = expandXsd(l.getDatatype());
-            if( IRI_FORBIDDEN.matcher(iri).find() || iri.indexOf(':') < 1 ){
-                throw new SQLException("Invalid datatype IRI", "22018");
-            }
+            checkIri(iri, "datatype IRI");
             return ResourceFactory.createTypedLiteral(lexical,
                     org.apache.jena.datatypes.TypeMapper.getInstance().getSafeTypeByName(iri));
         }
