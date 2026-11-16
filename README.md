@@ -48,6 +48,28 @@ jobc:[Ontology Storage Type]:[Ontology Storage Address]&method=[HTTP Verbs]
     * Fuseki : jobc:fuseki:http://localhost:3030/jobc/sparql&method=post
     * Virtuoso : jobc:virtuoso://localhost:1111/CHARSET=UTF-8
 
+### HTTP Connection Properties (web, fuseki)
+Set as JDBC properties or appended to the URL as `&key=value` (URL values win; values are URL-decoded).
+
+| Property | Default | Meaning |
+|---|---|---|
+| connecttimeout | 5000 | TCP connect timeout (ms) |
+| connectionrequesttimeout | 10000 | Wait for a pooled connection (ms) |
+| sockettimeout | 60000 | Wait for response data (ms). `Statement.setQueryTimeout` / `Connection.setNetworkTimeout` override it per request |
+| maxresponsebytes | 67108864 | Responses larger than this (64 MiB) fail instead of exhausting memory |
+
+### Changes (security & stability hardening)
+- `PreparedStatement.setNull()` now throws `SQLException` (SQLState 22004). SPARQL has no NULL; it used to bind an empty string silently.
+- Unsupported parameter types (`byte[]`, streams, `Blob` …) throw `SQLFeatureNotSupportedException`. `Date`, `Timestamp`, `BigDecimal`, `java.time` types are bound as typed xsd literals.
+- Removed `APIMangerService.getPassword()/getUser()`; `getProperty("password")` returns null. Passwords are masked in logs.
+- Removed unused legacy classes: `PrepareQueryBuilder`, `VirtuosoPreparedSparqlBuilder`, `VirtuosoConnection4pstmt`, `VirtuosoPreparedStatement4psmt`, `APISelectGetService`, `APISelectPostService`, `APIUpdatePostFusekiService`, `AbstractAPIService`.
+- `logback-classic` is no longer a runtime dependency. Applications must provide their own SLF4J binding.
+- `Connection.close()` now releases resources: the HTTP pool closes when the last connection using it is closed.
+- Default HTTP timeouts and `maxresponsebytes` (see table above). HTTP errors map to SQLStates (401/403 → 28000, 5xx → 08S01).
+- `Connection.getMetaData()` throws `SQLFeatureNotSupportedException` instead of returning null.
+- `xsd:gYearMonth` → `java.time.YearMonth`, `xsd:gMonthDay` → `java.time.MonthDay`, `xsd:gMonth`/`gDay`/`gYear` → `Integer`.
+- `ResultSet` numeric getters return 0 and `wasNull()` is true for unbound variables; out-of-range values throw (SQLState 22003).
+
 ### Preparedstatement
 - The code is identical to using JDBC.
 - '?' is used as a variable in Sparql.
