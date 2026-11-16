@@ -4,6 +4,11 @@ import com.frotoma.jobc.JobcDriverException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.BatchUpdateException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.HashMap;
@@ -33,21 +38,41 @@ public class WebSparqlStatement implements Statement{
 
     private int updateCount = -1;
 
+    private int queryTimeoutSeconds = 0;
+
+    private volatile boolean closed = false;
+
+    private final List<String> batch = new ArrayList<>();
+
 
     public WebSparqlStatement(WebSparqlConnection sparqlConnection) {
         this.sparqlConnection = sparqlConnection;
     }
 
+    /** 이 Statement 나 연결이 닫혔으면 예외 */
+    protected void checkOpen() throws SQLException {
+        if( closed ){
+            throw new SQLException("Statement is closed", "HY010");
+        }
+        sparqlConnection.checkOpen();
+    }
+
+    /** 요청 응답 대기 시간(ms): setQueryTimeout 이 있으면 그것, 없으면 연결의 networkTimeout(0이면 접속 기본값) */
+    protected int effectiveTimeoutMillis() throws SQLException {
+        return queryTimeoutSeconds > 0 ? queryTimeoutSeconds * 1000 : sparqlConnection.getNetworkTimeout();
+    }
+
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        if( iface.isInstance(this) ){
+            return iface.cast(this);
+        }
+        throw new SQLException("Not a wrapper for " + iface.getName());
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return iface.isInstance(this);
     }
 
     public WebSparqlResultset executeQueryInternal( String sql ) throws JobcDriverException, SQLException{
@@ -57,12 +82,12 @@ public class WebSparqlStatement implements Statement{
         
         if( sparqlConnection.getValue("method") == null || sparqlConnection.getValue("method").equals("get")){
             // GET            
-            result = sparqlConnection.getAPIManger().get(sparqlConnection.getUrl(), param);
+            result = sparqlConnection.getAPIManger().get(sparqlConnection.getUrl(), param, effectiveTimeoutMillis());
             //APISelectGetService get = new APISelectGetService();
             //result = get.api(sparqlConnection.getUrl(), param, sparqlConnection.info());      
         }else{
             // POST
-            result = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param);
+            result = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param, effectiveTimeoutMillis());
 //            APISelectPostService post = new APISelectPostService();
 //            result = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());            
         }
@@ -83,7 +108,7 @@ public class WebSparqlStatement implements Statement{
      */
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
-        sparqlConnection.checkOpen();
+        checkOpen();
         try {
             this.rs = executeQueryInternal(sql);
             return rs;
@@ -101,7 +126,7 @@ public class WebSparqlStatement implements Statement{
             // jsonString  = restAPIService.post(sparqlConnection.getUrl(), param, sparqlConnection.info());
             
             // POST
-            jsonString = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param);
+            jsonString = sparqlConnection.getAPIManger().post(sparqlConnection.getUrl(), param, effectiveTimeoutMillis());
 //            APISelectPostService post = new APISelectPostService();
 //            jsonString = post.api(sparqlConnection.getUrl(), param, sparqlConnection.info());
             return jsonString;
@@ -113,7 +138,7 @@ public class WebSparqlStatement implements Statement{
 
     @Override
     public int executeUpdate(String sql) throws SQLException {
-        sparqlConnection.checkOpen();
+        checkOpen();
         if( sparqlConnection.isReadOnly() ){
             throw new SQLException("Read Only");
         }
@@ -167,7 +192,10 @@ public class WebSparqlStatement implements Statement{
     }
 
     @Override
-    public void close() throws SQLException {}
+    public void close() throws SQLException {
+        closed = true;
+        batch.clear();
+    }
 
     @Override
     public int getMaxFieldSize() throws SQLException {
@@ -196,14 +224,15 @@ public class WebSparqlStatement implements Statement{
 
     @Override
     public int getQueryTimeout() throws SQLException {
-        // TODO Auto-generated method stub
-        return 0;
+        return queryTimeoutSeconds;
     }
 
     @Override
     public void setQueryTimeout(int seconds) throws SQLException {
-        // TODO Auto-generated method stub
-        
+        if( seconds < 0 ){
+            throw new SQLException("Query timeout must be >= 0: " + seconds);
+        }
+        this.queryTimeoutSeconds = seconds;
     }
 
     @Override
@@ -300,26 +329,43 @@ public class WebSparqlStatement implements Statement{
 
     @Override
     public int getResultSetConcurrency() throws SQLException {
-        throw new UnsupportedOperationException();
+        return ResultSet.CONCUR_READ_ONLY;
     }
 
     @Override
     public int getResultSetType() throws SQLException {
-        throw new UnsupportedOperationException();
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
-    public void addBatch(String sql) throws SQLException {    
-        this.execute(sql);
+    /** 바로 실행하지 않고 쌓아 둔다. executeBatch() 에서 차례로 실행한다. */
+    public void addBatch(String sql) throws SQLException {
+        checkOpen();
+        batch.add(sql);
     }
 
     @Override
-    public void clearBatch() throws SQLException {        
+    public void clearBatch() throws SQLException {
+        batch.clear();
     }
 
+    /** 쌓아 둔 update 를 차례로 실행한다. 중간에 실패하면 그때까지의 결과를 담은 BatchUpdateException. 끝나면 비운다. */
     @Override
     public int[] executeBatch() throws SQLException {
-        throw new UnsupportedOperationException();
+        checkOpen();
+        int[] counts = new int[batch.size()];
+        try {
+            for( int i = 0; i < counts.length; i++ ){
+                try {
+                    counts[i] = executeUpdate(batch.get(i));
+                } catch (SQLException e) {
+                    throw new BatchUpdateException(e.getMessage(), e.getSQLState(), e.getErrorCode(), Arrays.copyOf(counts, i), e);
+                }
+            }
+            return counts;
+        } finally {
+            batch.clear();
+        }
     }
 
     @Override
@@ -329,53 +375,52 @@ public class WebSparqlStatement implements Statement{
 
     @Override
     public boolean getMoreResults(int current) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean execute(String sql, String[] columnNames) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        throw new UnsupportedOperationException();
+        return ResultSet.CLOSE_CURSORS_AT_COMMIT;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return closed;
     }
 
     @Override

@@ -24,8 +24,6 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 
 import com.frotoma.jobc.builder.PrepareSparqlBuilder;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * TODO : SparqlPreparedStatement 를 상속받아 구현 가능할 듯
@@ -36,7 +34,6 @@ public class FusekiSparqlPreparedStatement implements PreparedStatement{
 
     private FusekiSparqlStatement statement = null;
     
-    private List<String> batchQuery = new ArrayList<>();
 
     public FusekiSparqlPreparedStatement(FusekiSparqlConnection sparqlConnection, String sql){        
         this.statement = new FusekiSparqlStatement( sparqlConnection );        
@@ -65,8 +62,7 @@ public class FusekiSparqlPreparedStatement implements PreparedStatement{
 
     @Override
     public void addBatch() throws SQLException {
-        batchQuery.add(queryBuilder.query());
-        //statement.addBatch(queryBuilder.query());
+        statement.addBatch(queryBuilder.query());
     }
 
     @Override
@@ -447,27 +443,17 @@ public class FusekiSparqlPreparedStatement implements PreparedStatement{
 
     @Override
     public void addBatch(String sql) throws SQLException {
-        batchQuery.add(queryBuilder.query());
-        //statement.addBatch(sql);        
+        statement.addBatch(sql);
     }
 
     @Override
     public void clearBatch() throws SQLException {
-        batchQuery.clear();
-        //statement.clearBatch();        
+        statement.clearBatch();
     }
 
     @Override
-    public int[] executeBatch() throws SQLException {        
-        int[] queryResult = new int[batchQuery.size()];
-        int i = 0;
-        for(String batchQuery : batchQuery ){
-            statement.execute(batchQuery);
-            queryResult[i++] = 1;
-        }
-        //statement.addBatch(queryBuilder.query());
-        batchQuery.clear();
-        return queryResult;
+    public int[] executeBatch() throws SQLException {
+        return statement.executeBatch();
     }
 
     @Override

@@ -31,12 +31,12 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         
         if( getSparqlConnection().getValue("method") == null || getSparqlConnection().getValue("method").equals("get")){
             // GET
-            result = getSparqlConnection().getAPIManger().get(getURLQuery(), param);
+            result = getSparqlConnection().getAPIManger().get(getURLQuery(), param, effectiveTimeoutMillis());
 //            APISelectGetService get = new APISelectGetService();
 //            result = get.api(getURLQuery(), param, getSparqlConnection().info());      
         }else{
             // POST
-            result = getSparqlConnection().getAPIManger().post(getURLQuery(), param);
+            result = getSparqlConnection().getAPIManger().post(getURLQuery(), param, effectiveTimeoutMillis());
 //            APISelectPostService post = new APISelectPostService();
 //            result = post.api(getURLQuery(), param, getSparqlConnection().info());            
         }
@@ -61,7 +61,7 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         // jsonString  = restAPIService.post(sparqlConnection.getUrl(), param, sparqlConnection.info());
 
         // POST            
-        jsonString = getSparqlConnection().getAPIManger().post(getURLUpdate(), param);
+        jsonString = getSparqlConnection().getAPIManger().post(getURLUpdate(), param, effectiveTimeoutMillis());
 //        APIUpdatePostFusekiService post = new APIUpdatePostFusekiService();
 //        jsonString = post.api(getURLUpdate(), param, getSparqlConnection().info());
         return jsonString;
