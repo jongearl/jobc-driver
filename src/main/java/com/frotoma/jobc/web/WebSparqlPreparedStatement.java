@@ -69,7 +69,7 @@ public class WebSparqlPreparedStatement implements PreparedStatement{
 
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        sparqlBuilder.addParameter(parameterIndex , "");
+        sparqlBuilder.addParameter(parameterIndex , null);
     }
 
     @Override
@@ -160,7 +160,7 @@ public class WebSparqlPreparedStatement implements PreparedStatement{
 
     @Override
     public void clearParameters() throws SQLException {
-        // TODO Auto-generated method stub
+        sparqlBuilder.clearParameters();
         
     }
 
@@ -224,7 +224,7 @@ public class WebSparqlPreparedStatement implements PreparedStatement{
 
     @Override
     public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-        sparqlBuilder.addParameter(parameterIndex , "");
+        sparqlBuilder.addParameter(parameterIndex , null);
         
     }
 
