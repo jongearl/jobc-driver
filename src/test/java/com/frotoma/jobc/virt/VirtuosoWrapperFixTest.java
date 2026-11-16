@@ -74,6 +74,13 @@ public class VirtuosoWrapperFixTest {
         PreparedStatement ps = conn.prepareStatement(SELECT);
         ps.setString(1, "abc");
         ps.clearParameters();
+        try {
+            ps.executeQuery();
+            fail("값이 지워졌으므로 07001");
+        } catch (SQLException e) {
+            assertEquals("07001", e.getSQLState());
+        }
+        ps.setString(1, "def");
         ps.executeQuery();
         assertFalse(executed.get(0), executed.get(0).contains("abc"));
     }

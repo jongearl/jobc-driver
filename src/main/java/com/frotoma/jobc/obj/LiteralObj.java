@@ -75,7 +75,8 @@ public class LiteralObj {
         }else if( localType.equalsIgnoreCase("long")){
             return Long.parseLong(value);
         }else if( localType.equalsIgnoreCase("boolean")){
-            return Boolean.parseBoolean(value);
+            // xsd:boolean 의 어휘 형식은 true/false/1/0
+            return "1".equals(value.trim()) || Boolean.parseBoolean(value.trim());
         }else if( localType.equalsIgnoreCase("short")){
             return Short.parseShort(value);
         }else if( localType.equalsIgnoreCase("byte")){

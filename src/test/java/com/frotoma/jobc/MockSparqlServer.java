@@ -25,6 +25,7 @@ public class MockSparqlServer implements AutoCloseable {
     private volatile String body = DEFAULT_JSON;
     private volatile long delayMillis = 0;
     private volatile boolean chunked = false;
+    private final java.util.Map<String, String> extraHeaders = new java.util.concurrent.ConcurrentHashMap<>();
 
     private volatile String lastMethod;
     private volatile String lastPath;
@@ -47,6 +48,7 @@ public class MockSparqlServer implements AutoCloseable {
                 Thread.currentThread().interrupt();
             }
             byte[] out = body == null ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+            extraHeaders.forEach((k, v) -> exchange.getResponseHeaders().set(k, v));
             if (contentType != null) {
                 exchange.getResponseHeaders().set("Content-Type", contentType);
             }
@@ -85,6 +87,11 @@ public class MockSparqlServer implements AutoCloseable {
 
     public MockSparqlServer delayMillis(long delayMillis) {
         this.delayMillis = delayMillis;
+        return this;
+    }
+
+    public MockSparqlServer header(String name, String value) {
+        extraHeaders.put(name, value);
         return this;
     }
 

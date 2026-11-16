@@ -29,7 +29,7 @@ public class PrepareSparqlBuilder {
 
     public PrepareSparqlBuilder(String sql){
         pss = new ParameterizedSparqlString();
-        pss.setCommandText(sql + " ");
+        pss.setCommandText(SparqlPlaceholders.normalize(sql) + " ");
     }
 
     /**
@@ -88,15 +88,27 @@ public class PrepareSparqlBuilder {
         return ResourceFactory.createTypedLiteral(lexical, type);
     }
 
-    private static Literal toLiteral(LiteralObj l){
+    private static final java.util.regex.Pattern LANG_TAG = java.util.regex.Pattern.compile("[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*");
+    private static final java.util.regex.Pattern IRI_FORBIDDEN = java.util.regex.Pattern.compile("[\\s<>\"{}|^`\\\\]");
+
+    /** Jena 는 언어 태그·데이터타입 IRI 를 검사하지 않고 쿼리 문자열에 그대로 넣으므로 여기서 막는다 (인젝션 방지) */
+    private static Literal toLiteral(LiteralObj l) throws SQLException{
+        String lexical = l.getLexicalForm() != null ? l.getLexicalForm() : String.valueOf(l.getValue());
         if( l.getLang() != null ){
-            return ResourceFactory.createLangLiteral(l.getLexicalForm(), l.getLang());
+            if( !LANG_TAG.matcher(l.getLang()).matches() ){
+                throw new SQLException("Invalid language tag", "22018");
+            }
+            return ResourceFactory.createLangLiteral(lexical, l.getLang());
         }
         if( l.getDatatype() != null ){
-            return ResourceFactory.createTypedLiteral(l.getLexicalForm(),
-                    org.apache.jena.datatypes.TypeMapper.getInstance().getSafeTypeByName(expandXsd(l.getDatatype())));
+            String iri = expandXsd(l.getDatatype());
+            if( IRI_FORBIDDEN.matcher(iri).find() || iri.indexOf(':') < 1 ){
+                throw new SQLException("Invalid datatype IRI", "22018");
+            }
+            return ResourceFactory.createTypedLiteral(lexical,
+                    org.apache.jena.datatypes.TypeMapper.getInstance().getSafeTypeByName(iri));
         }
-        return ResourceFactory.createPlainLiteral(l.getLexicalForm());
+        return ResourceFactory.createPlainLiteral(lexical);
     }
 
     private static String expandXsd(String datatype){
@@ -107,8 +119,13 @@ public class PrepareSparqlBuilder {
         pss.clearParams();
     }
 
-    public String query(){
-        return pss.toString();
+    /** 값이 들어간 쿼리. 값을 넣지 않은 '?' 가 남아 있으면 SQLState 07001 */
+    public String query() throws SQLException{
+        String q = pss.toString();
+        if( SparqlPlaceholders.count(q) > 0 ){
+            throw new SQLException("Not all parameters are bound", "07001");
+        }
+        return q;
     }
 
 }

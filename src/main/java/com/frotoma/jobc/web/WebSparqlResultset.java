@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Statement;
@@ -49,9 +50,20 @@ public class WebSparqlResultset implements ResultSet{
         
         this.stmt = stmt;
         
-        // Sparql JSON 파싱        
-        JSONObject  jsonParser = new JSONObject (jsonString);        
-        
+        try {
+            parse(jsonString);
+        } catch (org.json.JSONException e) {
+            throw new SQLException("Malformed SPARQL JSON result: " + e.getMessage(), "HY000", e);
+        }
+        if( this.labels == null ){
+            throw new SQLException("Unexpected SPARQL result: no head/results or boolean", "HY000");
+        }
+    }
+
+    private void parse(String jsonString) throws SQLException {
+        // Sparql JSON 파싱
+        JSONObject  jsonParser = new JSONObject (jsonString);
+
         // 접속 에러
         if( jsonParser.has("status") ){
             if( jsonParser.has("error") && jsonParser.getInt("status") != 200 ){                
@@ -105,10 +117,12 @@ public class WebSparqlResultset implements ResultSet{
         return this.lastIdx;
     }
 
+    /** 1부터 시작하는 컬럼 번호 → 변수 이름. 범위 밖이면 SQLState 07009 */
     private String getLabelByIndex(int columnIndex) throws SQLException{
-        columnIndex = columnIndex -1;
-        if( labels.size() < columnIndex ) throw new SQLException(columnIndex +" > "+ labels.size()+ "인덱스의 범위가 벗어납니다.");
-        return labels.get(columnIndex);
+        if( columnIndex < 1 || columnIndex > labels.size() ){
+            throw new SQLException("Column index out of range: " + columnIndex + " (columns: " + labels.size() + ")", "07009");
+        }
+        return labels.get(columnIndex - 1);
     }
 
     // private JSONObject getJSONObjectValue(int columnIndex ) throws SQLException{        
@@ -118,8 +132,13 @@ public class WebSparqlResultset implements ResultSet{
     // }
 
     private JSONObject getJSONObjectValue(String label ) throws SQLException{
-        if( !labels.contains(label) ) return null;                 
-        JSONObject row = bindings.getJSONObject(index);                
+        if( !labels.contains(label) ){
+            throw new SQLException("Unknown column: " + label, "42S22");
+        }
+        if( index < 0 || index >= lastIdx ){
+            throw new SQLException("No current row", "24000");
+        }
+        JSONObject row = bindings.getJSONObject(index);
         if(!row.has(label)){
             return null;
         }
@@ -200,14 +219,15 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        if( iface.isInstance(this) ){
+            return iface.cast(this);
+        }
+        throw new SQLException("Not a wrapper for " + iface.getName());
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return iface.isInstance(this);
     }
 
     @Override
@@ -270,8 +290,7 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        return obj == null ? null : obj.toString();
+        return lexical(columnLabel);
         // throw new SQLException("'"+obj+"'는 문자열이 아닙니다.");
     }
 
@@ -391,9 +410,71 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);        
-        return obj.toString().getBytes();
-        // throw new SQLException("'"+obj+"'는 문자열이 아닙니다.");
+        String s = lexical(columnLabel);
+        return s == null ? null : s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** 저장소가 돌려준 값 그대로(리터럴은 lexical form). 바인딩되지 않았으면 null 이고 wasNull 이 true */
+    private String lexical(String columnLabel) throws SQLException {
+        Object raw = getObject(columnLabel);
+        lastWasNull = ( raw == null );
+        if( raw == null ){
+            return null;
+        }
+        if( raw instanceof LiteralObj ){
+            String lf = ((LiteralObj) raw).getLexicalForm();
+            return lf != null ? lf : String.valueOf(((LiteralObj) raw).getValue());
+        }
+        return raw.toString();
+    }
+
+    private static SQLException badValue(String s, String type, Exception cause){
+        return new SQLException("'" + s + "' is not a valid " + type, "22018", cause);
+    }
+
+    /** xsd:dateTime / xsd:date 문자열 → Timestamp. 오프셋이 있으면 그 순간을 JVM 시간대로 */
+    private static Timestamp toTimestamp(String s) throws SQLException {
+        try {
+            if( s.indexOf('T') > 0 ){
+                try {
+                    return Timestamp.from(java.time.OffsetDateTime.parse(s).toInstant());
+                } catch (java.time.format.DateTimeParseException noOffset) {
+                    return Timestamp.valueOf(java.time.LocalDateTime.parse(s));
+                }
+            }
+            return Timestamp.valueOf(toLocalDate(s).atStartOfDay());
+        } catch (RuntimeException e) {
+            throw badValue(s, "timestamp", e);
+        }
+    }
+
+    /** xsd:date("2026-11-16", "2026-11-16+09:00") 또는 xsd:dateTime 의 날짜 부분 */
+    private static java.time.LocalDate toLocalDate(String s) throws SQLException {
+        try {
+            if( s.indexOf('T') > 0 ){
+                return toTimestamp(s).toLocalDateTime().toLocalDate();
+            }
+            return java.time.LocalDate.parse(s.length() > 10 && s.charAt(0) != '-' ? s.substring(0, 10) : s);
+        } catch (RuntimeException e) {
+            throw badValue(s, "date", e);
+        }
+    }
+
+    /** xsd:time("10:20:30", 타임존 포함 가능) 또는 xsd:dateTime 의 시간 부분 */
+    private static java.time.LocalTime toLocalTime(String s) throws SQLException {
+        try {
+            if( s.indexOf('T') > 0 ){
+                return toTimestamp(s).toLocalDateTime().toLocalTime();
+            }
+            String t = s.endsWith("Z") ? s.substring(0, s.length() - 1) : s;
+            int tz = Math.max(t.lastIndexOf('+'), t.lastIndexOf('-'));
+            if( tz > 0 ){
+                t = t.substring(0, tz);
+            }
+            return java.time.LocalTime.parse(t);
+        } catch (RuntimeException e) {
+            throw badValue(s, "time", e);
+        }
     }
 
     @Override
@@ -404,12 +485,8 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public Date getDate(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Date ){
-            return (Date)obj;
-        }
-        Date sqlDate = Date.valueOf(obj.toString());
-        return sqlDate;
+        String s = lexical(columnLabel);
+        return s == null ? null : Date.valueOf(toLocalDate(s));
     }
 
     @Override
@@ -420,12 +497,8 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public Time getTime(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Time ){
-            return (Time)obj;
-        }
-        Time sqlTime = Time.valueOf(obj.toString());
-        return sqlTime;
+        String s = lexical(columnLabel);
+        return s == null ? null : Time.valueOf(toLocalTime(s));
     }
 
     @Override
@@ -436,57 +509,53 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
-        Object obj = getObjectValue(columnLabel);
-        if(obj instanceof Timestamp ){
-            return (Timestamp)obj;
-        }
-        Timestamp sqlTimeSTimestamp = Timestamp.valueOf(obj.toString());
-        return sqlTimeSTimestamp;
+        String s = lexical(columnLabel);
+        return s == null ? null : toTimestamp(s);
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }    
 
     @Override
     public InputStream getAsciiStream(String columnLabel) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public InputStream getBinaryStream(String columnLabel) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        throw new UnsupportedOperationException();        
+        // 경고 없음
     }
 
     @Override
     public String getCursorName() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -497,53 +566,57 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        return labels.indexOf(columnLabel);
+        int i = labels.indexOf(columnLabel);
+        if( i < 0 ){
+            throw new SQLException("Unknown column: " + columnLabel, "42S22");
+        }
+        return i + 1;
     }
 
     @Override
     public Reader getCharacterStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public Reader getCharacterStream(String columnLabel) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
     
 
     @Override
     public boolean isBeforeFirst() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean isAfterLast() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean isFirst() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean isLast() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void beforeFirst() throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void afterLast() throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public boolean first() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -558,12 +631,12 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public boolean absolute(int row) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -574,12 +647,12 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public int getFetchDirection() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -613,252 +686,252 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public boolean rowInserted() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean rowDeleted() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateNull(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateBoolean(int columnIndex, boolean x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateByte(int columnIndex, byte x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateShort(int columnIndex, short x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateInt(int columnIndex, int x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateLong(int columnIndex, long x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateFloat(int columnIndex, float x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateDouble(int columnIndex, double x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateString(int columnIndex, String x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateBytes(int columnIndex, byte[] x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateDate(int columnIndex, Date x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateTime(int columnIndex, Time x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateObject(int columnIndex, Object x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateNull(String columnLabel) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateBoolean(String columnLabel, boolean x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateByte(String columnLabel, byte x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateShort(String columnLabel, short x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateInt(String columnLabel, int x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateLong(String columnLabel, long x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateFloat(String columnLabel, float x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateDouble(String columnLabel, double x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateString(String columnLabel, String x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateBytes(String columnLabel, byte[] x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void updateDate(String columnLabel, Date x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateTime(String columnLabel, Time x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x, int length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader, int length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateObject(String columnLabel, Object x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void insertRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void deleteRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void refreshRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void cancelRowUpdates() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void moveToInsertRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void moveToCurrentRow() throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
@@ -927,99 +1000,100 @@ public class WebSparqlResultset implements ResultSet{
         return null;
     }
 
+    // Calendar 버전: xsd 값은 타임존을 직접 갖거나 로컬 값이므로 Calendar 는 쓰지 않는다
     @Override
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getDate(columnIndex);
     }
 
     @Override
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getDate(columnLabel);
     }
 
     @Override
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getTime(columnIndex);
     }
 
     @Override
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getTime(columnLabel);
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getTimestamp(columnIndex);
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getTimestamp(columnLabel);
     }
 
     @Override
     public URL getURL(int columnIndex) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getURL(getLabelByIndex(columnIndex));
     }
 
     @Override
     public URL getURL(String columnLabel) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        String s = lexical(columnLabel);
+        if( s == null ){
+            return null;
+        }
+        try {
+            return java.net.URI.create(s).toURL();
+        } catch (IllegalArgumentException | java.net.MalformedURLException e) {
+            throw badValue(s, "URL", e);
+        }
     }
 
     @Override
     public void updateRef(int columnIndex, Ref x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateRef(String columnLabel, Ref x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(String columnLabel, Blob x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(int columnIndex, Clob x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(String columnLabel, Clob x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateArray(int columnIndex, Array x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateArray(String columnLabel, Array x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
@@ -1037,13 +1111,13 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateRowId(String columnLabel, RowId x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
@@ -1061,24 +1135,24 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public void updateNString(int columnIndex, String nString) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNString(String columnLabel, String nString) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
     public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
-        throw new UnsupportedOperationException();        
+        throw new SQLFeatureNotSupportedException();        
     }
 
     @Override
@@ -1113,20 +1187,18 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public String getNString(int columnIndex) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getString(columnIndex);
     }
 
     @Override
     public String getNString(String columnLabel) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getString(columnLabel);
     }
 
     @Override
@@ -1143,182 +1215,223 @@ public class WebSparqlResultset implements ResultSet{
 
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(String columnLabel, InputStream inputStream, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(int columnIndex, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(int columnIndex, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateClob(String columnLabel, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNClob(int columnIndex, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public void updateNClob(String columnLabel, Reader reader) throws SQLException {
-        throw new UnsupportedOperationException();
+        throw new SQLFeatureNotSupportedException();
         
     }
 
     @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        return getObject(getLabelByIndex(columnIndex), type);
     }
 
+    /** JDBC 4.1 getObject(col, Class). MyBatis 의 java.time TypeHandler 가 이 메서드를 쓴다. 바인딩되지 않았으면 null */
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        String s = lexical(columnLabel);
+        if( s == null ){
+            return null;
+        }
+        Object v;
+        if( type == String.class ) v = s;
+        else if( type == Integer.class ) v = getInt(columnLabel);
+        else if( type == Long.class ) v = getLong(columnLabel);
+        else if( type == Short.class ) v = getShort(columnLabel);
+        else if( type == Byte.class ) v = getByte(columnLabel);
+        else if( type == Double.class ) v = getDouble(columnLabel);
+        else if( type == Float.class ) v = getFloat(columnLabel);
+        else if( type == Boolean.class ) v = getBoolean(columnLabel);
+        else if( type == BigDecimal.class ) v = getBigDecimal(columnLabel);
+        else if( type == java.math.BigInteger.class ) v = getBigDecimal(columnLabel).toBigInteger();
+        else if( type == java.time.LocalDate.class ) v = toLocalDate(s);
+        else if( type == java.time.LocalTime.class ) v = toLocalTime(s);
+        else if( type == java.time.LocalDateTime.class ) v = toTimestamp(s).toLocalDateTime();
+        else if( type == java.time.OffsetDateTime.class ) v = toOffsetDateTime(s);
+        else if( type == java.time.Instant.class ) v = toTimestamp(s).toInstant();
+        else if( type == Timestamp.class || type == java.util.Date.class ) v = toTimestamp(s);
+        else if( type == Date.class ) v = Date.valueOf(toLocalDate(s));
+        else if( type == Time.class ) v = Time.valueOf(toLocalTime(s));
+        else if( type == URL.class ) v = getURL(columnLabel);
+        else {
+            Object raw = getObject(columnLabel);
+            if( type.isInstance(raw) ){
+                v = raw;
+            }else if( raw instanceof LiteralObj && type.isInstance(((LiteralObj) raw).getValue()) ){
+                v = ((LiteralObj) raw).getValue();
+            }else{
+                throw new SQLFeatureNotSupportedException("Cannot convert column " + columnLabel + " to " + type.getName());
+            }
+        }
+        return type.cast(v);
+    }
+
+    private static java.time.OffsetDateTime toOffsetDateTime(String s) throws SQLException {
+        try {
+            return java.time.OffsetDateTime.parse(s);
+        } catch (java.time.format.DateTimeParseException noOffset) {
+            return toTimestamp(s).toLocalDateTime().atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime();
+        }
     }
     
 }

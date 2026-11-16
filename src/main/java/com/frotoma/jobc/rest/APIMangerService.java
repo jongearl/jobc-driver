@@ -87,6 +87,8 @@ public class APIMangerService implements AutoCloseable {
         this.httpClient = HttpClients.custom()
                 .setConnectionManager(cm)
                 .setDefaultRequestConfig(defaultConfig)
+                // 리다이렉트를 따라가면 손으로 넣은 Authorization 헤더가 다른 호스트로 넘어간다
+                .disableRedirectHandling()
                 .build();
     }
 
@@ -139,7 +141,7 @@ public class APIMangerService implements AutoCloseable {
             urlBuffer.append(entry.getKey()).append("=").append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
         }
         logger.debug( "GET SPARQL : {}", LogBuilder.generateOneline( param.get("query") ) );
-        logger.debug( "GET URL : {}", url );
+        logger.debug( "GET URL : {}", LogMasker.maskUrl(url) );
 
         return execute(new HttpGet(urlBuffer.toString()), timeoutMillis);
     }
@@ -155,7 +157,7 @@ public class APIMangerService implements AutoCloseable {
      */
     public String post(String url, Map<String, String> param, int timeoutMillis) throws JobcDriverException{
         logger.debug( "POST SPARQL : {}", LogBuilder.generateOneline( param.containsKey("query") ? param.get("query") : param.get("update") ) );
-        logger.debug( "POST URL : {}", url );
+        logger.debug( "POST URL : {}", LogMasker.maskUrl(url) );
 
         HttpPost httpPost = new HttpPost( url );
         httpPost.setHeader("Content-Type", CONTENT_TYPE);
@@ -240,10 +242,15 @@ public class APIMangerService implements AutoCloseable {
         try {
             conn = new java.net.URL(url).openConnection();
             conn.setConnectTimeout(timeoutMillis);
+            conn.setReadTimeout(timeoutMillis);
             conn.connect();
             return true;
-        } catch (IOException e) {
+        } catch (java.net.MalformedURLException e) {
             throw new SQLException( e );
+        } catch (IOException e) {
+            // JDBC isValid: 접속할 수 없으면 false
+            logger.debug( "Endpoint not reachable: {}", e.toString() );
+            return false;
         } finally {
             if( conn instanceof java.net.HttpURLConnection ){
                 ((java.net.HttpURLConnection) conn).disconnect();

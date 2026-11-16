@@ -97,7 +97,8 @@ public class WebSparqlStatement implements Statement{
         }else if( isJson(result) ){
             this.rs =  new WebSparqlResultset(this, result );
         }else{
-            this.rs =  new WebSparqlResultset(this );
+            // HTML 로그인 페이지, Turtle(CONSTRUCT/DESCRIBE), XML 등은 0건으로 숨기지 않고 오류로 알린다
+            throw new SQLException("Unexpected response: not SPARQL JSON results", "HY000");
         }
         return rs;
 
@@ -157,7 +158,16 @@ public class WebSparqlStatement implements Statement{
             updateCount = 0;
             return updateCount;
         }else if( isJson(jsonString) ){
-            this.rs =  new WebSparqlResultset(this, jsonString );
+            try {
+                this.rs =  new WebSparqlResultset(this, jsonString );
+            } catch (SQLException e) {
+                if( !"HY000".equals(e.getSQLState()) ){
+                    throw e;
+                }
+                // 결과 형식이 아닌 JSON 응답(서버 상태 메시지 등): update 는 성공으로 본다
+                updateCount = 0;
+                return updateCount;
+            }
         }else{
             updateCount = 0;
             return updateCount;
@@ -166,11 +176,15 @@ public class WebSparqlStatement implements Statement{
         // 이전 버전에서는 update 건수를 결과로 리턴 했음
         while( rs.next() ){
             Object obj = rs.getObject(1);
-            if( obj instanceof LiteralObj ){
-                Object value = ((LiteralObj)obj).getValue();
-                updateCount = ( value instanceof Number ) ? ((Number) value).intValue() : Integer.parseInt(value.toString().trim());
-            }else if( obj instanceof String ){                
-                updateCount = Integer.parseInt(obj.toString());
+            Object value = ( obj instanceof LiteralObj ) ? ((LiteralObj)obj).getValue() : obj;
+            if( value instanceof Number ){
+                updateCount = ((Number) value).intValue();
+            }else if( value != null ){
+                try {
+                    updateCount = Integer.parseInt(value.toString().trim());
+                } catch (NumberFormatException e) {
+                    throw new SQLException("Update count is not a number: '" + value + "'", "22018", e);
+                }
             }
         }
 

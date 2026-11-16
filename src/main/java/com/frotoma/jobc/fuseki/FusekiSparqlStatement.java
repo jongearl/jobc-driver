@@ -47,7 +47,8 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
         }else if( isJson(result) ){
             rs =  new WebSparqlResultset(this, result );
         }else{
-            rs =  new WebSparqlResultset(this );
+            // HTML 로그인 페이지, Turtle(CONSTRUCT/DESCRIBE), XML 등은 0건으로 숨기지 않고 오류로 알린다
+            throw new SQLException("Unexpected response: not SPARQL JSON results", "HY000");
         }
         return rs;
     }

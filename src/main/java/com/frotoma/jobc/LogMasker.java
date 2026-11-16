@@ -7,8 +7,10 @@ import java.util.regex.Pattern;
  */
 public final class LogMasker {
 
-    private static final Pattern PASSWORD_PARAM = Pattern.compile("(?i)(pwd|password|passwd)=[^/&;?]*");
-    private static final Pattern USER_INFO = Pattern.compile("(://[^:/@]+:)[^@/]+@");
+    /** 값은 다음 '/'(Virtuoso 구분자) 또는 '&'(URL 속성 구분자)까지. ';' '?' '@' 는 비밀번호에 들어갈 수 있다. */
+    private static final Pattern PASSWORD_PARAM = Pattern.compile("(?i)(pwd|password|passwd)=[^/&]*");
+    /** scheme://user:비밀번호@host — 비밀번호에 '@' 가 있을 수 있으므로 첫 '/' 앞의 마지막 '@' 까지 */
+    private static final Pattern USER_INFO = Pattern.compile("(://[^:/@]+:)[^/]*@");
 
     private LogMasker() {
     }

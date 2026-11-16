@@ -118,6 +118,10 @@ public class PrepareSparqlBuilderFixTest {
         PrepareSparqlBuilder b = new PrepareSparqlBuilder(SELECT);
         b.addParameter(1, "abc");
         b.clearParameters();
+        // 값이 지워졌으므로 바인딩되지 않은 '?' 가 남아 07001
+        Exception e = thrown(b::query);
+        assertEquals("07001", ((SQLException) e).getSQLState());
+        b.addParameter(1, "def");
         assertFalse(b.query(), b.query().contains("abc"));
     }
 

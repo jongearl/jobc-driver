@@ -51,7 +51,7 @@ public abstract class AbstractHttpSparqlDriver implements java.sql.Driver {
     }
 
     /** 접속 속성(키는 소문자)에 URL 의 "&amp;key=value"(값은 URL 디코딩)를 더한다. URL 쪽 값이 우선한다. */
-    static Properties urlToInfo(String endpoint, Properties info) {
+    static Properties urlToInfo(String endpoint, Properties info) throws SQLException {
         Properties props = new Properties();
         for (String key : info.stringPropertyNames()) {
             props.setProperty(key.toLowerCase(), info.getProperty(key));
@@ -61,7 +61,15 @@ public abstract class AbstractHttpSparqlDriver implements java.sql.Driver {
             for (String pair : endpoint.substring(start + 1).split("&")) {
                 String[] kv = pair.split("=", 2);
                 if (kv.length == 2 && !kv[0].isEmpty()) {
-                    props.setProperty(kv[0].toLowerCase(), URLDecoder.decode(kv[1], StandardCharsets.UTF_8));
+                    String value;
+                    try {
+                        value = URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+                    } catch (IllegalArgumentException e) {
+                        // 원래 예외 메시지에는 값(비밀번호)의 일부가 들어 있으므로 원인을 붙이지 않는다
+                        throw new SQLException("Invalid percent-encoding in URL property '" + kv[0]
+                                + "' (encode '%' as %25 and '+' as %2B)", "08001");
+                    }
+                    props.setProperty(kv[0].toLowerCase(), value);
                 }
             }
         }

@@ -226,6 +226,9 @@ public class WebSparqlConnection implements Connection{
 
     @Override
     public boolean isValid(int timeout) throws SQLException {
+        if( timeout < 0 ){
+            throw new SQLException("Timeout must be >= 0: " + timeout);
+        }
         if( closed ){
             return false;
         }
