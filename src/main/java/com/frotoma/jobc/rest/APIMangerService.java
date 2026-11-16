@@ -3,7 +3,9 @@ package com.frotoma.jobc.rest;
 import com.frotoma.jobc.JobcDriverException;
 import com.frotoma.jobc.LogMasker;
 import com.frotoma.jobc.builder.LogBuilder;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -12,86 +14,101 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import org.apache.http.HttpResponse;
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
- *
+ * 접속(URL + 속성)마다 하나씩 두는 HTTP 클라이언트. 연결 풀과 타임아웃, 응답 크기 제한을 관리한다.
  * @author jongearl
  */
-public class APIMangerService {
-    
+public class APIMangerService implements AutoCloseable {
+
     private static final Logger logger = LoggerFactory.getLogger(APIMangerService.class);
-    
-    private static final String ACCEPT_SPARQL = "application/sparql-results+json";
-    private static final String ACCEPT_JSON = "application/json; charset=utf-8";
+
+    private static final String ACCEPT = "application/sparql-results+json, application/json;q=0.9";
     private static final String CONTENT_TYPE = "application/x-www-form-urlencoded; charset=utf-8";
-    
+
+    static final int DEFAULT_CONNECT_TIMEOUT = 5000;
+    static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 10000;
+    static final int DEFAULT_SOCKET_TIMEOUT = 60000;
+    static final long DEFAULT_MAX_RESPONSE_BYTES = 64L * 1024 * 1024;
+
+    /** 오류 응답 본문 중 예외 메시지에 넣는 최대 글자 수 */
+    private static final int MAX_ERROR_BODY = 1000;
+
     private final PoolingHttpClientConnectionManager cm;
-    
-    private final HttpClient httpClient;
-    
-    private Properties info;
-    
-    private String url;
-    
-    private String user;
-    
+
+    private final CloseableHttpClient httpClient;
+
+    private final RequestConfig defaultConfig;
+
+    private final long maxResponseBytes;
+
+    private final Properties info;
+
+    private final String url;
 
     public APIMangerService(String url, Properties info){
-        
+
         this.url = url;
-        
-        init( info );        
-        
+        this.info = info;
+
+        if( url != null && url.toLowerCase().startsWith("http://") && info.getProperty("user") != null ){
+            logger.warn("Basic auth over plain HTTP: credentials are sent unencrypted to {}", LogMasker.maskUrl(url));
+        }
+
         // 1. 커넥션 풀 매니저 설정
         cm = new PoolingHttpClientConnectionManager();
         cm.setMaxTotal(100);
         cm.setDefaultMaxPerRoute(20);
 
-        // 2. 타임아웃 설정 (RequestConfig, ms). 접속 속성에 없으면 연결 대기 5초, 나머지는 제한 없음
-        RequestConfig.Builder b = RequestConfig.custom()
-                .setConnectTimeout(5000);     // 서버 연결 대기 시간
-        if ( info.containsKey("connectionrequesttimeout") ) {
-            b.setConnectionRequestTimeout( Integer.parseInt( info.getProperty("connectionrequesttimeout") ));
-        }
-        if( info.containsKey("connecttimeout") ){
-            b.setConnectTimeout( Integer.parseInt( info.getProperty("connecttimeout") ) ) ;
-        }
-        if( info.containsKey("sockettimeout") ){
-            b.setSocketTimeout( Integer.parseInt( info.getProperty("sockettimeout") ) );   // 데이터 응답 대기 시간
-        }
-        RequestConfig requestConfig  = b.build();
-
+        // 2. 타임아웃 설정 (ms). 접속 속성에 없거나 숫자가 아니면 기본값
+        this.defaultConfig = RequestConfig.custom()
+                .setConnectTimeout( intProp(info, "connecttimeout", DEFAULT_CONNECT_TIMEOUT) )
+                .setConnectionRequestTimeout( intProp(info, "connectionrequesttimeout", DEFAULT_CONNECTION_REQUEST_TIMEOUT) )
+                .setSocketTimeout( intProp(info, "sockettimeout", DEFAULT_SOCKET_TIMEOUT) )
+                .build();
+        this.maxResponseBytes = longProp(info, "maxresponsebytes", DEFAULT_MAX_RESPONSE_BYTES);
 
         // 3. 빌더에 풀 매니저와 기본 설정을 모두 주입하여 '단 한 번만' 생성
         this.httpClient = HttpClients.custom()
                 .setConnectionManager(cm)
-                .setDefaultRequestConfig(requestConfig)
+                .setDefaultRequestConfig(defaultConfig)
                 .build();
     }
-    
-    private void init(Properties info){
 
-        this.user = info.getProperty("user");
+    private static int intProp(Properties p, String key, int def){
+        return (int) longProp(p, key, def);
+    }
 
-        this.info = info;
-        if( url != null && url.toLowerCase().startsWith("http://") && user != null ){
-            logger.warn("Basic auth over plain HTTP: credentials are sent unencrypted to {}", LogMasker.maskUrl(url));
+    private static long longProp(Properties p, String key, long def){
+        String v = p.getProperty(key);
+        if( v == null ){
+            return def;
         }
+        try {
+            return Long.parseLong(v.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid value for '{}': '{}'. Using default {}", key, v, def);
+            return def;
+        }
+    }
+
+    RequestConfig defaultRequestConfig(){
+        return defaultConfig;
     }
 
     /** 접속 속성. 비밀번호는 밖으로 내주지 않는다. */
@@ -101,120 +118,121 @@ public class APIMangerService {
         }
         return this.info.getProperty(key);
     }
-    
+
     public void setProperty(String key, String value){
         this.info.setProperty(key, value);
     }
 
     public String get(String url, Map<String, String> param) throws JobcDriverException{
-        
-        String resultJson = null;        
-        try {
-            int idx = 0;
-            
-            StringBuilder urlBuffer = new StringBuilder( url );
-            for (String key : param.keySet()) {
-                String value = param.get(key);
-                urlBuffer.append((idx == 0) ? "?" : "&");
-                urlBuffer.append(key).append("=").append(URLEncoder.encode(value, "UTF-8"));
-                idx++;
-            }
-
-            String _urlString = urlBuffer.toString();
-            
-            logger.debug( "GET SPARQL : " + LogBuilder.generateOneline( param.get("query") ) );
-            logger.debug( "GET URL : " + _urlString );
-            logger.debug( "GET PARAM : " + param );
-            
-            HttpGet httpGet = new HttpGet(_urlString);            
-            httpGet.setHeader("ACCEPT", ACCEPT_SPARQL);
-            httpGet.setHeader("ACCEPT", ACCEPT_JSON);        
-            httpGet.setHeader("Content-Type", CONTENT_TYPE);
-
-            String username = info.getProperty("user");
-            String password = info.getProperty("password");
-            if (username != null && password != null) {
-                String auth = username + ":" + password;
-                byte[] data1 = auth.getBytes(StandardCharsets.UTF_8);
-                String base64 = Base64.getEncoder().encodeToString(data1);                
-                httpGet.setHeader("Authorization", "Basic " + base64);
-            }
-
-            HttpResponse httpResponse = this.httpClient.execute(httpGet);
-            // System.out.println( "=================== HEADER ====================");
-            // for( Header header : httpResponse.getAllHeaders() ){
-            //     System.out.println( header.getName() +" : "+ header.getValue() );
-            // }
-            // System.out.println( "================================================");
-            resultJson = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);   // charset 이 없으면 UTF-8 (SPARQL JSON 기본)            
-            int statulsCode = httpResponse.getStatusLine().getStatusCode();
-            if( statulsCode != 200 ){
-                throw new SQLException( resultJson.trim() );
-            }
-        } catch (IOException ex) {
-            throw new JobcDriverException(ex);
-        } catch (SQLException ex) {
-            throw new JobcDriverException(ex);
-        }
-        return resultJson;
+        return get(url, param, 0);
     }
-    
-    public String post(String url, Map<String, String> param) throws JobcDriverException{
-        
-        // 전송방식 HttpGet, HttpPost방식
-        logger.debug( "POST SPARQL : " + LogBuilder.generateOneline( param.get("query") ) );
-        logger.debug( "POST URL : " + url );
-        logger.debug( "POST PARAM : " + param );
-        
-        String resultJson = null;
-        HttpPost httpPost = new HttpPost( url  );
-        
-        // 일반 SQL은 select만 가능
-        httpPost.setHeader("ACCEPT", ACCEPT_SPARQL);
-        httpPost.setHeader("ACCEPT", ACCEPT_JSON);        
-        httpPost.setHeader("Content-Type", CONTENT_TYPE);
-        
 
+    /**
+     * @param timeoutMillis 이 요청의 응답 대기 시간(ms). 0 이하이면 접속 기본값
+     * @return 응답 본문. 본문이 없으면(204 등) null
+     */
+    public String get(String url, Map<String, String> param, int timeoutMillis) throws JobcDriverException{
+        StringBuilder urlBuffer = new StringBuilder( url );
+        int idx = 0;
+        for (Map.Entry<String, String> entry : param.entrySet()) {
+            urlBuffer.append((idx++ == 0) ? "?" : "&");
+            urlBuffer.append(entry.getKey()).append("=").append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+        logger.debug( "GET SPARQL : {}", LogBuilder.generateOneline( param.get("query") ) );
+        logger.debug( "GET URL : {}", url );
+
+        return execute(new HttpGet(urlBuffer.toString()), timeoutMillis);
+    }
+
+    public String post(String url, Map<String, String> param) throws JobcDriverException{
+        return post(url, param, 0);
+    }
+
+    /**
+     * 파라미터는 URL 이 아니라 본문(form)으로 보낸다 (긴 SPARQL 의 URL 길이 제한 회피)
+     * @param timeoutMillis 이 요청의 응답 대기 시간(ms). 0 이하이면 접속 기본값
+     * @return 응답 본문. 본문이 없으면(204 등) null
+     */
+    public String post(String url, Map<String, String> param, int timeoutMillis) throws JobcDriverException{
+        logger.debug( "POST SPARQL : {}", LogBuilder.generateOneline( param.containsKey("query") ? param.get("query") : param.get("update") ) );
+        logger.debug( "POST URL : {}", url );
+
+        HttpPost httpPost = new HttpPost( url );
+        httpPost.setHeader("Content-Type", CONTENT_TYPE);
+        List<NameValuePair> form = new ArrayList<>();
+        for (Map.Entry<String, String> entry : param.entrySet()) {
+            form.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        }
+        httpPost.setEntity(new UrlEncodedFormEntity(form, StandardCharsets.UTF_8));
+        return execute(httpPost, timeoutMillis);
+    }
+
+    private String execute(HttpRequestBase request, int timeoutMillis) throws JobcDriverException{
+        request.setHeader("Accept", ACCEPT);
         String username = info.getProperty("user");
         String password = info.getProperty("password");
-        String base64 = null;
         if( username != null && password != null ){
             String auth = username + ":" + password;
-            byte[] data1 = auth.getBytes(StandardCharsets.UTF_8);
-            base64 = Base64.getEncoder().encodeToString(data1);
-            httpPost.addHeader("Authorization", "Basic " + base64);
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8)));
+        }
+        if( timeoutMillis > 0 ){
+            request.setConfig(RequestConfig.copy(defaultConfig).setSocketTimeout(timeoutMillis).build());
         }
 
-        try {
-            // 파라미터는 URL 이 아니라 본문(form)으로 보낸다 (긴 SPARQL 의 URL 길이 제한 회피)
-            List<NameValuePair> form = new ArrayList<>();
-            for (Map.Entry<String, String> entry : param.entrySet()) {
-                form.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            String body = readBounded(request, response.getEntity(), maxResponseBytes);
+            if( status < 200 || status >= 300 ){
+                String text = body == null ? "" : body.trim();
+                if( text.length() > MAX_ERROR_BODY ){
+                    text = text.substring(0, MAX_ERROR_BODY);
+                }
+                throw new JobcDriverException(new SQLException("HTTP " + status + ": " + text, sqlState(status), status));
             }
-            httpPost.setEntity(new UrlEncodedFormEntity(form, StandardCharsets.UTF_8));
-
-
-            HttpResponse httpResponse = httpClient.execute(httpPost);
-//            logger.debug( "===================  POST Response HEADER ====================");
-//            for( Header header : httpResponse.getAllHeaders() ){
-//                logger.debug( header.getName() +" : "+ header.getValue() );
-//            }
-//            logger.debug( "================================================");
-            resultJson = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);   // charset 이 없으면 UTF-8 (SPARQL JSON 기본)                        
-            int statulsCode = httpResponse.getStatusLine().getStatusCode();            
-            if( statulsCode != 200 ){                
-                throw new SQLException( resultJson.trim() );
-            }
-        } catch (ClientProtocolException e) {
-            throw new JobcDriverException(e);
+            return ( body == null || body.isEmpty() ) ? null : body;
         } catch (IOException e) {
-            throw new JobcDriverException(e);
-        } catch (SQLException ex) {
-            throw new JobcDriverException(ex);
+            request.abort();
+            throw new JobcDriverException(new SQLException(e.getMessage(), "08S01", e));
         }
-        return resultJson;        
     }
-    
+
+    private static String sqlState(int status){
+        if( status == 401 || status == 403 ) return "28000";
+        if( status == 404 ) return "08001";
+        if( status >= 500 ) return "08S01";
+        return "HY000";
+    }
+
+    /** 응답 본문을 최대 maxBytes 까지만 읽는다. 넘으면 요청을 끊고(연결은 풀에 돌려주지 않음) 예외. */
+    private static String readBounded(HttpRequestBase request, HttpEntity entity, long maxBytes) throws IOException{
+        if( entity == null ){
+            return null;
+        }
+        String tooLarge = "Response exceeds maxresponsebytes=" + maxBytes;
+        if( entity.getContentLength() > maxBytes ){
+            request.abort();
+            throw new IOException(tooLarge);
+        }
+        try (InputStream in = entity.getContent()) {
+            if( in == null ){
+                return null;
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            long total = 0;
+            int n;
+            while( (n = in.read(buf)) != -1 ){
+                total += n;
+                if( total > maxBytes ){
+                    request.abort();
+                    throw new IOException(tooLarge);
+                }
+                out.write(buf, 0, n);
+            }
+            // charset 이 없으면 UTF-8 (SPARQL JSON 기본)
+            return out.toString(StandardCharsets.UTF_8);
+        }
+    }
 
     /** 서버에 TCP 연결이 되는지만 본다. 연 연결은 바로 닫는다. @param timeoutMillis 연결 대기 ms */
     public boolean isReachable(int timeoutMillis) throws SQLException{
@@ -231,6 +249,11 @@ public class APIMangerService {
                 ((java.net.HttpURLConnection) conn).disconnect();
             }
         }
+    }
+
+    @Override
+    public void close(){
+        cm.close();
     }
 
 }

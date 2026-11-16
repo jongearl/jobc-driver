@@ -88,7 +88,7 @@ public class WebSparqlStatement implements Statement{
             return rs;
         } catch (JobcDriverException ex) {        
             logger.error( ex.toString() );
-            throw new SQLException(ex);
+            throw ex.toSQLException();
         }
     }
 
@@ -106,7 +106,7 @@ public class WebSparqlStatement implements Statement{
             return jsonString;
         } catch (JobcDriverException ex) {
             logger.error( ex.toString() );
-            throw new SQLException(ex);
+            throw ex.toSQLException();
         }
     }
 
@@ -116,7 +116,13 @@ public class WebSparqlStatement implements Statement{
             throw new SQLException("Read Only");
         }
         
-        String jsonString = updateQueryInternal(sql);        
+        String jsonString;
+        try {
+            jsonString = updateQueryInternal(sql);
+        } catch (JobcDriverException ex) {
+            logger.error( ex.toString() );
+            throw ex.toSQLException();
+        }
 
         logger.debug("RESPONSE JSON : "+jsonString);
 
