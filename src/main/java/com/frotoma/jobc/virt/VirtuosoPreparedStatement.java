@@ -327,7 +327,7 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
 
     @Override
     public void setNull(int parameterIndex, int sqlType) throws SQLException {
-        queryBuilder.addParameter(parameterIndex , "");        
+        queryBuilder.addParameter(parameterIndex , null);        
     }
 
     @Override
@@ -413,7 +413,7 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
 
     @Override
     public void clearParameters() throws SQLException {
-        //queryBuilder.clearParameters();        
+        queryBuilder.clearParameters();
     }
 
     @Override
@@ -471,7 +471,7 @@ public class VirtuosoPreparedStatement implements PreparedStatement {
 
     @Override
     public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-        queryBuilder.addParameter(parameterIndex , "");        
+        queryBuilder.addParameter(parameterIndex , null);        
     }
 
     @Override

@@ -75,7 +75,7 @@ public class VirtuosoConnection implements Connection {
     @Override public int getTransactionIsolation() throws SQLException { return delegate.getTransactionIsolation(); }
     @Override public SQLWarning getWarnings() throws SQLException { return delegate.getWarnings(); }
     @Override public void clearWarnings() throws SQLException { delegate.clearWarnings(); }
-    @Override public Statement createStatement(int t, int c) throws SQLException { return delegate.createStatement(t, c); }
+    @Override public Statement createStatement(int t, int c) throws SQLException { return new VirtuosoStatement(delegate.createStatement(t, c)); }
     @Override public CallableStatement prepareCall(String s, int t, int c) throws SQLException { return delegate.prepareCall(s, t, c); }
     @Override public Map<String, Class<?>> getTypeMap() throws SQLException { return delegate.getTypeMap(); }
     @Override public void setTypeMap(Map<String, Class<?>> m) throws SQLException { delegate.setTypeMap(m); }
@@ -85,7 +85,7 @@ public class VirtuosoConnection implements Connection {
     @Override public Savepoint setSavepoint(String n) throws SQLException { return delegate.setSavepoint(n); }
     @Override public void rollback(Savepoint s) throws SQLException { delegate.rollback(s); }
     @Override public void releaseSavepoint(Savepoint s) throws SQLException { delegate.releaseSavepoint(s); }
-    @Override public Statement createStatement(int t, int c, int h) throws SQLException { return delegate.createStatement(t, c, h); }
+    @Override public Statement createStatement(int t, int c, int h) throws SQLException { return new VirtuosoStatement(delegate.createStatement(t, c, h)); }
     @Override public CallableStatement prepareCall(String s, int t, int c, int h) throws SQLException { return delegate.prepareCall(s, t, c, h); }
     @Override public Clob createClob() throws SQLException { return delegate.createClob(); }
     @Override public Blob createBlob() throws SQLException { return delegate.createBlob(); }
