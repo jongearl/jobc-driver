@@ -215,4 +215,22 @@ public class APIMangerService {
         return resultJson;        
     }
     
+
+    /** 서버에 TCP 연결이 되는지만 본다. 연 연결은 바로 닫는다. @param timeoutMillis 연결 대기 ms */
+    public boolean isReachable(int timeoutMillis) throws SQLException{
+        java.net.URLConnection conn = null;
+        try {
+            conn = new java.net.URL(url).openConnection();
+            conn.setConnectTimeout(timeoutMillis);
+            conn.connect();
+            return true;
+        } catch (IOException e) {
+            throw new SQLException( e );
+        } finally {
+            if( conn instanceof java.net.HttpURLConnection ){
+                ((java.net.HttpURLConnection) conn).disconnect();
+            }
+        }
+    }
+
 }

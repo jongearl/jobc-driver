@@ -1,7 +1,6 @@
 package com.frotoma.onto.sparql;
 
 
-import com.frotoma.jobc.rest.APISelectPostService;
 import com.frotoma.onto.pool.*;
 import java.sql.Connection;
 import java.sql.DriverManager;

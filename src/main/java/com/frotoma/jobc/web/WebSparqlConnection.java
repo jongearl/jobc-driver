@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import com.frotoma.jobc.rest.APISelectGetService;
 
 public class WebSparqlConnection implements Connection{
 
@@ -309,8 +308,8 @@ public class WebSparqlConnection implements Connection{
     public boolean isValid(int timeout) throws SQLException {
         // JDBC 의 timeout 은 초 단위, 0 이면 제한 없음 (그때는 10초)
         int millis = ( timeout > 0 ) ? timeout * 1000 : 10000;
-        APISelectGetService get = new APISelectGetService();
-        return get.isValid(url, millis);
+
+        return apiManager.isReachable(millis);
     }
 
     @Override
