@@ -7,7 +7,10 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 
@@ -18,10 +21,9 @@ public class WebSparqlDriver implements java.sql.Driver{
     private static int MAJOR_VERSION = 1;
     private static int MINOR_VERSION = 1;
 
-    private String url = null;
-    
-    private APIMangerService apiMangeerService = null;
-    
+    // DriverManager 에는 드라이버 인스턴스가 하나만 등록되므로 접속 URL·속성별로 따로 둔다.
+    private final Map<String, APIMangerService> apiMangeerServices = new ConcurrentHashMap<>();
+
     static {
         try {
           DriverManager.registerDriver(new WebSparqlDriver());
@@ -36,15 +38,19 @@ public class WebSparqlDriver implements java.sql.Driver{
             return null;
         }
         
-        if( apiMangeerService == null ){
-            this.url = extractURL(url);
-            Properties props = urlToInfo(info);
-            // url 값은 변형됨
-            apiMangeerService = new APIMangerService(this.url, info);
-        }
-        
-        return new WebSparqlConnection(this.url, apiMangeerService);
-    }    
+        String endpoint = extractURL(url);
+        Properties props = urlToInfo(endpoint, info);
+        String serverUrl = stripParams(endpoint);
+        APIMangerService apiMangeerService = apiMangeerServices.computeIfAbsent(
+                serverUrl + " " + new TreeMap<>(props), key -> new APIMangerService(serverUrl, props));
+        return new WebSparqlConnection(serverUrl, apiMangeerService);
+    }
+
+    /** "&amp;" 뒤의 접속 속성을 뗀 서버 URL */
+    protected String stripParams(String endpoint){
+        int endIndex = endpoint.indexOf("&");
+        return endIndex > 0 ? endpoint.substring(0, endIndex) : endpoint;
+    }
     
     protected String extractURL(String urlString){        
         String url = urlString;
@@ -54,7 +60,8 @@ public class WebSparqlDriver implements java.sql.Driver{
         return url;
     }
 
-    protected Properties urlToInfo(Properties _info){             
+    /** 접속 속성(키는 소문자)에 URL 의 "&amp;key=value" 를 더한다. URL 쪽 값이 우선한다. */
+    protected Properties urlToInfo(String url, Properties _info){
         
         Properties props = new Properties();        
         Iterator<Object> it = _info.keySet().iterator();
@@ -70,9 +77,7 @@ public class WebSparqlDriver implements java.sql.Driver{
         // }        
         int endIndex = url.indexOf("&");
         if( endIndex > 0 ){
-            String _url = url.substring(0, endIndex);
             String _params = url.substring(endIndex+1);
-            this.url = _url;
 
             String[] keyvalue = _params.split("&");
             for( int i = 0; i < keyvalue.length; i++ ){

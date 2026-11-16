@@ -77,9 +77,10 @@ public class FusekiSparqlStatement extends WebSparqlStatement{
     }
     
     private String generateURL(String page){
-        String sparql_server_url = getSparqlConnection().getUrl().toLowerCase();
-        if( sparql_server_url.endsWith("/sparql") ){
-            int endIdx = sparql_server_url.lastIndexOf("/sparql");
+        // 데이터셋 이름은 대소문자를 구분하므로 URL 자체는 바꾸지 않는다
+        String sparql_server_url = getSparqlConnection().getUrl();
+        if( sparql_server_url.toLowerCase().endsWith("/sparql") ){
+            int endIdx = sparql_server_url.length() - "/sparql".length();
             sparql_server_url = sparql_server_url.substring(0, endIdx)+page;
             
         }else{

@@ -3,24 +3,25 @@ package com.frotoma.jobc.rest;
 import com.frotoma.jobc.JobcDriverException;
 import com.frotoma.jobc.builder.LogBuilder;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -62,46 +63,32 @@ public class APIMangerService {
         cm.setMaxTotal(100);
         cm.setDefaultMaxPerRoute(20);
 
-        // 2. 기본 타임아웃 설정 (RequestConfig)
-        RequestConfig defaultRequestConfig = RequestConfig.custom()
-                .setConnectTimeout(5000)     // 서버 연결 대기 시간
-                //.setResponseTimeout(10000)   // 데이터 응답 대기 시간
-                .build();
-        
-        RequestConfig.Builder b = RequestConfig.custom();            
-        if ( info.containsKey("connectionrequesttimeout") ) {                
-            b.setConnectionRequestTimeout( Integer.parseInt( info.getProperty("connectionrequesttimeout", "10000") ));
-        }            
+        // 2. 타임아웃 설정 (RequestConfig, ms). 접속 속성에 없으면 연결 대기 5초, 나머지는 제한 없음
+        RequestConfig.Builder b = RequestConfig.custom()
+                .setConnectTimeout(5000);     // 서버 연결 대기 시간
+        if ( info.containsKey("connectionrequesttimeout") ) {
+            b.setConnectionRequestTimeout( Integer.parseInt( info.getProperty("connectionrequesttimeout") ));
+        }
         if( info.containsKey("connecttimeout") ){
-            b.setConnectTimeout( Integer.parseInt( info.getProperty("connecttimeout", "10000") ) ) ;
-        }            
+            b.setConnectTimeout( Integer.parseInt( info.getProperty("connecttimeout") ) ) ;
+        }
         if( info.containsKey("sockettimeout") ){
-            b.setSocketTimeout( Integer.parseInt( info.getProperty("sockettimeout", "10000") ) );
+            b.setSocketTimeout( Integer.parseInt( info.getProperty("sockettimeout") ) );   // 데이터 응답 대기 시간
         }
         RequestConfig requestConfig  = b.build();
-            
+
 
         // 3. 빌더에 풀 매니저와 기본 설정을 모두 주입하여 '단 한 번만' 생성
         this.httpClient = HttpClients.custom()
                 .setConnectionManager(cm)
-                .setDefaultRequestConfig(defaultRequestConfig) 
+                .setDefaultRequestConfig(requestConfig)
                 .build();
     }
     
     private void init(Properties info){
         
         this.user = info.getProperty("user");
-        this.password = info.getProperty("password");    
-        
-        if( !info.contains("connecttimeout") ){
-            info.setProperty("connecttimeout", "10000");
-        }
-        if( !info.contains("sockettimeout") ){
-            info.setProperty("sockettimeout", "10000");
-        }
-        if( !info.contains("connectionrequesttimeout") ){
-            info.setProperty("connectionrequesttimeout", "10000");
-        }
+        this.password = info.getProperty("password");
         this.info = info;
     }
     
@@ -163,7 +150,7 @@ public class APIMangerService {
             //     System.out.println( header.getName() +" : "+ header.getValue() );
             // }
             // System.out.println( "================================================");
-            resultJson = EntityUtils.toString(httpResponse.getEntity());            
+            resultJson = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);   // charset 이 없으면 UTF-8 (SPARQL JSON 기본)            
             int statulsCode = httpResponse.getStatusLine().getStatusCode();
             if( statulsCode != 200 ){
                 throw new SQLException( resultJson.trim() );
@@ -204,20 +191,13 @@ public class APIMangerService {
             logger.debug( "POST AUTH : " + username +" / PASSWORD " );
         }        
 
-        URI uri = null;
         try {
-            URIBuilder ub = new URIBuilder( url );
-            Iterator<String> it = param.keySet().iterator();
-            while (it.hasNext()) {
-                String key = it.next();
-                String value = param.get(key);
-                ub.addParameter(key,value);                
-            }            
-            uri = ub.build();
-            
-            logger.debug( "POST URL : " + uri );
-
-            httpPost.setURI(uri);
+            // 파라미터는 URL 이 아니라 본문(form)으로 보낸다 (긴 SPARQL 의 URL 길이 제한 회피)
+            List<NameValuePair> form = new ArrayList<>();
+            for (Map.Entry<String, String> entry : param.entrySet()) {
+                form.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+            }
+            httpPost.setEntity(new UrlEncodedFormEntity(form, StandardCharsets.UTF_8));
 
             logger.debug( "===================  POST Request HEADER ====================");
             for( Header header : httpPost.getAllHeaders() ){
@@ -232,13 +212,11 @@ public class APIMangerService {
 //                logger.debug( header.getName() +" : "+ header.getValue() );
 //            }
 //            logger.debug( "================================================");
-            resultJson = EntityUtils.toString(httpResponse.getEntity());                        
+            resultJson = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);   // charset 이 없으면 UTF-8 (SPARQL JSON 기본)                        
             int statulsCode = httpResponse.getStatusLine().getStatusCode();            
             if( statulsCode != 200 ){                
                 throw new SQLException( resultJson.trim() );
             }
-        } catch (URISyntaxException e) {            
-            throw new JobcDriverException(e);
         } catch (ClientProtocolException e) {
             throw new JobcDriverException(e);
         } catch (IOException e) {

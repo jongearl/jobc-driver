@@ -1,6 +1,7 @@
 package com.frotoma.jobc.obj;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import com.frotoma.jobc.LiteralUtil;
 import com.frotoma.jobc.LiteralUtil.LiteralParts;
@@ -13,8 +14,9 @@ public class LiteralObj {
 
     private String lang = null;
 
-    // private String valueString = null;
-    
+    // 저장소가 돌려준 값 그대로 (변환 전 어휘 형식)
+    private String lexicalForm = null;
+
 
     /**
      * Turtle 스타일로 직렬화된 문자열( "값"@lang / "값"^^datatype )을 파싱해서 생성한다.
@@ -26,6 +28,7 @@ public class LiteralObj {
             init(parts.getValue(), parts.getLang(), parts.getDatatype());
         }else{
             this.value = valueString;
+            this.lexicalForm = valueString;
         }
     }
 
@@ -42,45 +45,52 @@ public class LiteralObj {
     private void init(String value, String lang, String datatype){
         this.lang = lang;
         this.datatype = datatype;
+        this.lexicalForm = value;
+        try {
+            this.value = convert(value, localName(datatype));
+        } catch (NumberFormatException e) {
+            // Java 값으로 바꿀 수 없는 형식("2026-05"^^xsd:gYearMonth 등)은 문자열 그대로 둔다
+            this.value = value;
+        }
+    }
 
-        String localType = localName(datatype);
-
+    private static Object convert(String value, String localType){
         if( localType == null ){
-            this.value = value;
+            return value;
         }else if( localType.equalsIgnoreCase("string") ){
-            this.value = value;
+            return value;
         }else if( localType.equalsIgnoreCase("integer")){
-            this.value = Integer.parseInt(value);
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                return new BigInteger(value);   // int 범위를 넘는 정수
+            }
         }else if( localType.equalsIgnoreCase("double")){
-            this.value = Double.parseDouble(value);
+            return Double.parseDouble(value);
         }else if( localType.equalsIgnoreCase("float")){
-            this.value = Float.parseFloat(value);
+            return Float.parseFloat(value);
         }else if( localType.equalsIgnoreCase("long")){
-            this.value = Long.parseLong(value);
+            return Long.parseLong(value);
         }else if( localType.equalsIgnoreCase("boolean")){
-            this.value = Boolean.parseBoolean(value);
+            return Boolean.parseBoolean(value);
         }else if( localType.equalsIgnoreCase("short")){
-            this.value = Short.parseShort(value);
+            return Short.parseShort(value);
         }else if( localType.equalsIgnoreCase("byte")){
-            this.value = Byte.parseByte(value);
+            return Byte.parseByte(value);
         }else if( localType.equalsIgnoreCase("decimal")){
-            this.value = new BigDecimal(value);
+            return new BigDecimal(value);
         }else if( localType.equalsIgnoreCase("gDay")){
-            this.value = Integer.parseInt(value);
+            return Integer.parseInt(value);
         }else if( localType.equalsIgnoreCase("gMonth")){
-            this.value = Integer.parseInt(value);
+            return Integer.parseInt(value);
         }else if( localType.equalsIgnoreCase("gMonthDay")){
-            this.value = Integer.parseInt(value);
+            return Integer.parseInt(value);
         }else if( localType.equalsIgnoreCase("gYear")){
-            this.value = Integer.parseInt(value);
+            return Integer.parseInt(value);
         }else if( localType.equalsIgnoreCase("gYearMonth")){
-            this.value = Integer.parseInt(value);
-        }else if( localType.equalsIgnoreCase("QName")){
-            this.value = value;
-        }else if( localType.equalsIgnoreCase("anyURI")){
-            this.value = value;
+            return Integer.parseInt(value);
         }else{
-            this.value = value;
+            return value;
         }
     }
 
@@ -119,6 +129,11 @@ public class LiteralObj {
 
     public void setValue(Object value) {
         this.value = value;
+    }
+
+    /** 저장소가 돌려준 값 그대로 ("007"^^xsd:integer 이면 "007"). getValue() 는 Java 값으로 바꾼 값(7) */
+    public String getLexicalForm() {
+        return lexicalForm;
     }
 
     public String getLang() {
