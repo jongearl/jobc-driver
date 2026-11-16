@@ -32,6 +32,15 @@ public class WebSparqlConnection implements Connection{
     // Web Always ReadOnly is True
     private boolean readOnly = true;
 
+    private volatile boolean closed = false;
+
+    /** 닫힌 연결이면 SQLState 08003 */
+    protected void checkOpen() throws SQLException {
+        if( closed ){
+            throw new SQLException("Connection is closed", "08003");
+        }
+    }
+
     public WebSparqlConnection(String url, APIMangerService apiManager) {        
         
         this.url = url;
@@ -73,11 +82,13 @@ public class WebSparqlConnection implements Connection{
 
     @Override
     public Statement createStatement() throws SQLException {        
+        checkOpen();
         return new WebSparqlStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {        
+        checkOpen();
         return new WebSparqlPreparedStatement(this, sql);
     }
 
@@ -116,13 +127,17 @@ public class WebSparqlConnection implements Connection{
     }
 
     @Override
-    public void close() throws SQLException {
-        // close 없음
+    public synchronized void close() throws SQLException {
+        // 같은 풀을 쓰는 마지막 연결이 닫히면 HTTP 풀도 닫힌다
+        if( !closed ){
+            closed = true;
+            apiManager.release();
+        }
     }
 
     @Override
     public boolean isClosed() throws SQLException {        
-        return false;
+        return closed;
     }
 
     @Override

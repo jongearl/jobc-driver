@@ -17,11 +17,13 @@ public class FusekiSparqlConnection extends WebSparqlConnection{
 
     @Override
     public Statement createStatement() throws SQLException {        
+        checkOpen();
         return new FusekiSparqlStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {        
+        checkOpen();
         return new FusekiSparqlPreparedStatement(this, sql);
     }
 }

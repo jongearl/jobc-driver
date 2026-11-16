@@ -251,9 +251,36 @@ public class APIMangerService implements AutoCloseable {
         }
     }
 
+    private int references = 0;
+
+    private boolean closed = false;
+
+    /** 이 풀을 쓰는 연결이 하나 늘었다. 이미 닫힌 풀이면 false (새로 만들어야 한다) */
+    public synchronized boolean tryRetain(){
+        if( closed ){
+            return false;
+        }
+        references++;
+        return true;
+    }
+
+    /** 이 풀을 쓰는 연결이 하나 줄었다. 0이 되면 풀을 닫는다. */
+    public synchronized void release(){
+        if( references > 0 && --references == 0 ){
+            close();
+        }
+    }
+
+    public synchronized boolean isClosed(){
+        return closed;
+    }
+
     @Override
-    public void close(){
-        cm.close();
+    public synchronized void close(){
+        if( !closed ){
+            closed = true;
+            cm.close();
+        }
     }
 
 }

@@ -25,7 +25,8 @@ public class VirtuosoSparqlDriver implements java.sql.Driver {
             //Class.forName("virtuoso.jdbc4.Driver");
             //DriverManager.registerDriver(new virtuoso.jdbc4.Driver());
             
-            DriverManager.registerDriver(new VirtuosoSparqlDriver());            
+            // DriverManager 등록은 JobcDriver 한 곳에서만 한다
+            com.frotoma.jobc.JobcDriver.ensureRegistered();
         } catch (Exception e) {
             throw new RuntimeException("[VirtuosoSparqlDriver] 드라이버 등록 실패", e);
         }

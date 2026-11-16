@@ -83,6 +83,7 @@ public class WebSparqlStatement implements Statement{
      */
     @Override
     public ResultSet executeQuery(String sql) throws SQLException {
+        sparqlConnection.checkOpen();
         try {
             this.rs = executeQueryInternal(sql);
             return rs;
@@ -111,7 +112,8 @@ public class WebSparqlStatement implements Statement{
     }
 
     @Override
-    public int executeUpdate(String sql) throws SQLException {        
+    public int executeUpdate(String sql) throws SQLException {
+        sparqlConnection.checkOpen();
         if( sparqlConnection.isReadOnly() ){
             throw new SQLException("Read Only");
         }

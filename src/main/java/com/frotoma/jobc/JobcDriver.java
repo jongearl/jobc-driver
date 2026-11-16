@@ -24,8 +24,8 @@ public class JobcDriver implements java.sql.Driver{
     
     private static final List<Driver> subDrivers = new ArrayList<>();
 
-    private static int MAJOR_VERSION = 1;
-    private static int MINOR_VERSION = 1;
+    public static final int MAJOR_VERSION = 1;
+    public static final int MINOR_VERSION = 1;
 
     static {
         try {
@@ -75,7 +75,11 @@ public class JobcDriver implements java.sql.Driver{
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        return null;
+        return new DriverPropertyInfo[0];
+    }
+
+    /** 아무 일도 하지 않는다. 부르는 것만으로 이 클래스가 초기화되어 DriverManager 에 한 번 등록된다. */
+    public static void ensureRegistered() {
     }
 
     @Override
@@ -95,9 +99,7 @@ public class JobcDriver implements java.sql.Driver{
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return null;
+        return Logger.getLogger("com.frotoma.jobc");
     }
-    
-    
-    
+
 }
